@@ -70,6 +70,11 @@ def check_config():
     elif not isinstance(config.normal_cmd, bool):
         raise ValueError('normal_cmd配置项值不正确')
 
+    if not hasattr(config, 'prevent_listen_qq_msg'):
+        raise ValueError('prevent_listen_qq_msg')
+    elif not isinstance(config.prevent_listen_qq_msg, bool):
+        raise ValueError('prevent_listen_qq_msg配置项值不正确')
+
 
 def main():
     if not check_model():

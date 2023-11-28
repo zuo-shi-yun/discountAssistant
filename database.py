@@ -2,6 +2,7 @@
 数据库管理模块
 """
 import sqlite3
+from datetime import datetime
 from sqlite3 import Cursor
 from typing import List
 
@@ -52,13 +53,16 @@ class DatabaseManager:
 
     def query(self, query_col: List[str], query_where: dict = None) -> list:
         """查询数据"""
-        query_col_sql = '`' + '` ,`'.join(query_col) + '`'
-        query_where = ' and '.join([f'`{k}`="{v}"' for k, v in query_where.items()])
+        if len(query_col) == 1 and query_col[0] == '*':
+            query_col_sql = '*'
+        else:
+            query_col_sql = '`' + '` ,`'.join(query_col) + '`'
 
         sql = f"select {query_col_sql} from {self.database}"
         if query_where:
+            query_where = ' and '.join([f'`{k}`="{v}"' for k, v in query_where.items()])
             sql += f" where {query_where}"
-            
+
         c = self.__execute__(sql)
 
         res = []
@@ -117,8 +121,9 @@ class DatabaseManager:
         self.__execute__("""
         create table if not exists  `groupMesControl` (
             `id` INTEGER PRIMARY KEY AUTOINCREMENT,
-            `group_qq` int,
-            `send_qq` ,
+            `qq` int,
+            `is_continuous_mes` int,
+            `send_qq` text,
             `last_no` int,
             `context_num` int,
             `last_mes` text,
@@ -146,3 +151,14 @@ class DatabaseManager:
 
     def __del__(self):
         self.close()
+
+    def get_today_all_message(self) -> List[str]:
+        """得到当天的全部优惠卷信息"""
+        month = datetime.now().month
+        day = datetime.now().day
+        sql = "select mes from allMes where `time` like '{:02}-{:02} %:%'".format(month, day)
+        c = self.__execute__(sql)
+        ret = []
+        for i in c:
+            ret.append(i[0])
+        return ret

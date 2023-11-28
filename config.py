@@ -33,3 +33,7 @@ effect_message_time = 20  # 仅当relate_message_num值不为0时生效
 # 是否允许非!cmd形式的命令
 # 若为False则只有以!开头的命令才会被识别
 normal_cmd = True
+
+# 是否屏蔽监听群内信息
+# 为True时将屏蔽监听群默认事件
+prevent_listen_qq_msg = True
