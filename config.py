@@ -29,3 +29,7 @@ max_relate_message_time = 10  # 仅当relate_message_num值不为0时生效
 #      该参数旨在避免这一情况
 # 单位:分
 effect_message_time = 20  # 仅当relate_message_num值不为0时生效
+
+# 是否允许非!cmd形式的命令
+# 若为False则只有以!开头的命令才会被识别
+normal_cmd = True

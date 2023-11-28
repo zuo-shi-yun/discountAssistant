@@ -66,6 +66,11 @@ def check_config():
     elif not isinstance(config.effect_message_time, int):
         raise ValueError('effect_message_time配置项值不正确')
 
+    if not hasattr(config, 'normal_cmd'):
+        raise ValueError('没有normal_cmd配置项')
+    elif not isinstance(config.normal_cmd, bool):
+        raise ValueError('normal_cmd配置项值不正确')
+
 
 def main():
     if not check_model():
