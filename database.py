@@ -3,6 +3,7 @@
 """
 import sqlite3
 from sqlite3 import Cursor
+from typing import List
 
 
 class DatabaseManager:
@@ -11,8 +12,9 @@ class DatabaseManager:
     conn = None
     cursor = None
 
-    def __init__(self):
+    def __init__(self, database_name: str = None):
         self.reconnect()
+        self.database = database_name
 
     # 连接到数据库文件
     def reconnect(self):
@@ -25,7 +27,59 @@ class DatabaseManager:
         self.conn.commit()
         return c
 
+    def insert(self, insert_data: dict) -> Cursor:
+        """插入数据"""
+        insert_key = '`' + '` ,`'.join(list(insert_data.keys())) + '`'
+        insert_value = "'" + "' ,'".join(list(insert_data.values())) + "'"
+        sql = f"insert into {self.database} ({insert_key}) values ({insert_value})"
+        return self.__execute__(sql)
+
+    def update(self, update_data: dict, where_data: dict) -> Cursor:
+        """更新数据"""
+        update_data = [f'`{k}`="{v}"' for k, v in update_data.items()]
+        update_data = ' ,'.join(update_data)
+        where_data = [f'`{k}`="{v}"' for k, v in where_data.items()]
+        where_data = ' and '.join(where_data)
+        sql = f"update {self.database} set {update_data} where {where_data}"
+        return self.__execute__(sql)
+
+    def delete(self, where_delete: dict) -> Cursor:
+        """删除数据"""
+        where_delete = [f'`{k}`="{v}"' for k, v in where_delete.items()]
+        where_delete = ' and '.join(where_delete)
+        sql = f"delete from {self.database} where {where_delete}"
+        return self.__execute__(sql)
+
+    def query(self, query_col: List[str], query_where: dict = None) -> list:
+        """查询数据"""
+        query_col_sql = '`' + '` ,`'.join(query_col) + '`'
+        query_where = ' and '.join([f'`{k}`="{v}"' for k, v in query_where.items()])
+
+        sql = f"select {query_col_sql} from {self.database}"
+        if query_where:
+            sql += f" where {query_where}"
+            
+        c = self.__execute__(sql)
+
+        res = []
+        if len(query_col) == 1:  # 只查询一行
+            for i in c:
+                res.append(i[0])
+        else:  # 查询多行
+            temp_res = {}
+            for i in c:
+                for col in range(len(query_col)):
+                    temp_res[query_col[col]] = i[col]
+                res.append(temp_res)
+
+        return res
+
+    # 初始化数据库
     def init_database(self):
+        """
+        初始化数据库
+        :return:
+        """
         # listen_qq表
         self.__execute__("""
         create table if not exists  `listenQQ` (

@@ -4,7 +4,6 @@ import os
 import requests
 
 import config
-from database import DatabaseManager
 
 
 def check_model() -> bool:
@@ -86,7 +85,7 @@ def main():
         logging.info('模型已存在!')
 
     check_config()  # 检查配置项
-
+    from database import DatabaseManager
     DatabaseManager().init_database()  # 初始化数据库
 
 
