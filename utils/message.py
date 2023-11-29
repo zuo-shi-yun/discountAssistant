@@ -294,7 +294,8 @@ class HandleMessage:
     def handle_repeat_message(self, svc_message, src_mes, code):
         """处理重复优惠券"""
         # 更新代码
-        src_code = svc_message.query(['code'], {'mes': src_mes})[0]
+        src_code = svc_message.query(['code'], {'mes': src_mes})
+        src_code = src_code[0] if len(src_code) else ''
         svc_message.update({'code': src_code + '\n' + '新:' + code + '\n'}, {'mes': src_mes})
         # 更新QQ
         src_qq = svc_message.query(['receive_qq'], {'mes': src_mes})[0]
