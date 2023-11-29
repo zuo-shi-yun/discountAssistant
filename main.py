@@ -6,7 +6,7 @@ from pkg.plugin.models import *
 
 sys.path.append(os.path.join('plugins', 'discountAssistant'))
 
-from .config import Config
+from . import config
 from utils.cmd import HandleCmd
 from utils.message import HandleMessage
 
@@ -20,7 +20,7 @@ from utils.message import HandleMessage
 class DiscountAssistant(Plugin):
     def __init__(self, plugin_host: PluginHost):
         self.host = plugin_host
-        self.cfg = Config()
+        self.cfg = config.Config()
 
     # 处理群、个人指令-!cmd形式
     @on(PersonCommandSent)
