@@ -12,6 +12,7 @@ from mirai import Plain, Image
 from pkg.plugin.host import PluginHost
 from text2vec import SentenceModel, cos_sim
 
+import config
 from utils.database import DatabaseManager
 
 sale_mes_lock = threading.Lock()  # 消息锁

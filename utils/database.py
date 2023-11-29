@@ -68,8 +68,7 @@ class DatabaseManager:
             # 使用正则表达式代表模糊查询,正则的模式代表模糊查询模式
             query_where = ' and '.join(
                 [f'`{k}` like "{v.pattern}"' if isinstance(v, re.Pattern)
-                 else f'`{k}`="{v}"' if isinstance(v, str)
-                else f'`{k}`={v}'
+                 else f'`{k}`="{v}"' if isinstance(v, str) else f'`{k}`={v}'
                  for k, v in query_where.items()])
             sql += f" where {query_where}"
 

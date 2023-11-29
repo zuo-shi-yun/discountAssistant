@@ -307,5 +307,5 @@ class HandleCmd:
         else:
             self.host.send_group_message(self.qq, mes_chain)
         # 发送上下文信息
-        Message(self.host).send_context_message(forward[0], [self.qq], ['0'], self.param[0], forward[1], reverse=True)
-        Message(self.host).send_context_message(later[0], [self.qq], ['0'], self.param[0], later[1])
+        Message().send_context_message(forward[0], [self.qq], ['0'], self.param[0], forward[1], reverse=True)
+        Message().send_context_message(later[0], [self.qq], ['0'], self.param[0], later[1])
