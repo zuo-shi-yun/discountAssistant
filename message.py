@@ -1,3 +1,6 @@
+"""
+处理优惠券信息的流程代码。实现筛选优惠券的全部逻辑
+"""
 import logging
 import re
 import threading
@@ -26,7 +29,9 @@ class HandleMessage:
 
         self.had_handle_msg = self.handle()
 
+    # 优惠券处理流程
     def handle(self) -> bool:
+        """处理优惠券信息"""
         svc_listen_qq = DatabaseManager('listenQQ')
         listen_qq = svc_listen_qq.query(['listen_qq'])  # 监听QQ
         if self.qq not in listen_qq:  # 不在监听群返回False不做后续处理
@@ -36,26 +41,25 @@ class HandleMessage:
             return True
 
         self.back_up_msg()  # 备份信息
-
+        # 判断是否是连续信息后续信息
         svc_group_control = DatabaseManager('groupMesControl')
         is_continuous_mes = svc_group_control.query(['is_continuous_mes'], {'QQ': self.qq})[0]  # 是否是连续信息的后续信息
-
+        # 优惠券相关信息
         mes_plain = self.mes_chain[Plain][0].text  # 文字信息
         introduce, code = self.get_mes_info(mes_plain)  # 优惠券介绍,代码
 
-        # 当是非连续消息以及连续消息的非后续消息时进入
+        # 当是非连续消息并且是连续消息的非后续消息时进入
         if not (is_continuous_mes and self.handle_continuous_late_message(mes_plain, svc_group_control, introduce,
                                                                           code)):
-            has_keyword, keywords, send_qq, qq_type = self.get_keyword_qq(introduce)
+            has_keyword, keywords, send_qq, qq_type = self.get_keyword_qq(mes_plain)  # 需要发送优惠券的qq相关信息
             last_mes_no = svc_group_control.query(['context_num'], {'qq': self.qq})[0]  # 判断是否是可疑信息后续
             if has_keyword:  # 信息含有有关键字
                 with sale_mes_lock:  # 加锁
                     logging.info(f'开始处理{self.qq}优惠信息')
 
-                    need_get_more_message = False  # 是否需要触发可以信息机制
+                    need_get_more_message = False  # 是否需要触发可疑信息机制
                     svc_message = DatabaseManager('saleMes')  # 优惠券数据库
-                    effect_time = config.effect_message_time  # 优惠券有效时间
-                    is_effect_info_last_info = self.is_effect_info_last_info(keywords, svc_message, int(effect_time))
+                    is_effect_info_last_info = self.is_effect_info_last_info(keywords, svc_message)  # 是否是有效信息的后续信息
                     if not code:  # 当没有检测到代码时则触发可疑信息机制
                         if is_effect_info_last_info:  # 当是有效信息的后续有效信息时直接返回
                             return True
@@ -63,8 +67,8 @@ class HandleMessage:
                         need_get_more_message = True
                         introduce = mes_plain
 
-                    today_all_mes = DatabaseManager().get_today_all_message() or ['']  # 当天的全部消息
-                    # 判断是否是重复消息
+                    today_all_mes = DatabaseManager().get_today_all_message() or ['']  # 当天的全部筛选到的优惠卷消息
+                    # 判断是否是重复消息、多步骤消息的重复消息
                     is_repeat = self.is_repeat_message(today_all_mes, introduce, r"plugins\discountAssistant\model",
                                                        svc_message, code)
                     is_contain = self.is_contain_message(today_all_mes, introduce, svc_message, code)
@@ -73,22 +77,22 @@ class HandleMessage:
                         # 是否是多步骤消息第一步消息
                         if re.match(r'^\d[.、]', introduce):
                             last_no = svc_group_control.query(['last_no'], {'qq': self.qq})[0]
-                            if int(re.match(r'^(\d)[.、]', introduce).group(1)) == last_no + 1:  # 满足递增条件
+                            if int(re.match(r'^(\d)[.、]', introduce).group(1)) == last_no + 1:  # 满足序号递增条件
                                 # 更新多步骤数据库
                                 svc_group_control.update({'is_continuous_mes': 1, 'send_qq': ' '.join(send_qq),
                                                           'last_no': {last_no + 1}}, {'qq': self.qq})
-                        # 正常消息处理流程
+                        # 普通消息处理流程
                         self.handle_normal_message(code, keywords, introduce, mes_plain, send_qq, svc_message,
                                                    qq_type, need_get_more_message, svc_group_control)
             elif last_mes_no:  # 是可疑信息后续信息
-                max_context_time = config.max_relate_message_time  # 最长可疑信息相关信息有效时间
                 mes_time = svc_group_control.query(['last_time'], {'qq': self.qq})[0]
                 # 获得原数据
                 src_mes = svc_group_control.query(['last_mes'], {'qq': self.qq})[0]
                 src_url = svc_group_control.query(['mes_image_url'], {'qq': self.qq})[0]
                 # 在时间内则更新
-                if self.is_time_limit_exceeded(max_context_time, mes_time) or last_mes_no == 1:  # 最后一条消息或已超时
-                    all_mes = src_mes.split('$')
+                if self.is_time_limit_exceeded(config.max_relate_message_time,
+                                               mes_time) or last_mes_no == 1:  # 最后一条消息或已超时
+                    all_mes = src_mes.split('$')  # 获得可疑消息相关信息文本
                     all_mes.append(mes_plain)  # 可疑信息相关信息文本
 
                     all_url = src_url.split()
@@ -106,7 +110,7 @@ class HandleMessage:
                                               'mes_image_url': '', 'context_qq': '', 'qq_type': '', 'mes_id': ''},
                                              {'qq': self.qq})
                 else:  # 处理可疑信息相关信息
-                    new_line = '\n$'
+                    new_line = '\n$'  # 拼接分隔符
                     svc_group_control.update({'last_mes': f"""{src_mes + new_line if src_mes else ''}{mes_plain}""",
                                               'mes_image_url': f'{src_url}\n{self.mes_chain[Image][0].url}' if len(
                                                   self.mes_chain[Image]) else '',
@@ -119,21 +123,20 @@ class HandleMessage:
         备份当前信息
         :return:
         """
-        mes = self.mes_chain[Plain][0].text if len(self.mes_chain[Plain]) else ''
-        image = self.mes_chain[Image][0].url if len(self.mes_chain[Image]) else ''
+        mes = self.mes_chain[Plain][0].text if len(self.mes_chain[Plain]) else ''  # 文本信息
+        image = self.mes_chain[Image][0].url if len(self.mes_chain[Image]) else ''  # 图片url
         local_time = time.localtime(time.time())
         mes_time = time.strftime("%m-%d %H:%M", local_time)  # 时间
-
+        # 备份
         svc_all_msg = DatabaseManager('allMes')
-
         svc_all_msg.insert({'mes': mes, 'time': mes_time, 'image_url': image, 'receive_qq': self.qq})
 
     # 获得优惠券的介绍和代码
     @staticmethod
     def get_mes_info(mes):
         """获得优惠券的介绍和代码"""
-        introduce = ''
-        code = ''
+        introduce = ''  # 简化后的优惠卷信息
+        code = ''  # 优惠券代码
         if '.jd.' in mes:  # 京东卷
             introduce = [i.strip() for i in re.split(r'https://u.jd.c.+', mes)]
             if '查券' in introduce[-1]:  # 去掉无用信息——部分qq群特殊对待
@@ -200,14 +203,13 @@ class HandleMessage:
                                 self.host.send_person_message(send_qq[i], mes_chain)
 
                         return True  # 是多步骤信息后续信息
-        else:
-            # 取消多步骤消息
+        else:  # 取消多步骤消息
             svc_continuous.update({'is_continuous_mes': 0, 'send_qq': '', 'last_no': 0}, {'qq': self.qq})  # 复原数据库
             return False
 
     # 获得优惠券关键字等信息
     @staticmethod
-    def get_keyword_qq(introduce):
+    def get_keyword_qq(mes):
         # 获得优惠券相关信息
         svc_keywords = DatabaseManager('keyword')
         key_words_all = svc_keywords.query(['*'])
@@ -217,7 +219,7 @@ class HandleMessage:
         has_keyword = False  # 是否有关键字
         for key_words in key_words_all:  # 判断是否有关键字
             for key_word in list(key_words['keywords'].split()):
-                if re.search(key_word, introduce, re.IGNORECASE | re.S):  # 忽略大小写、多行匹配
+                if re.search(key_word, mes, re.IGNORECASE | re.S):  # 忽略大小写、多行匹配
                     # 添加推送QQ
                     if key_words['send_mes']:  # 需要信息通知时才通知
                         send_qq.append(key_words['qq'])
@@ -230,7 +232,7 @@ class HandleMessage:
         return has_keyword, find_keyword, send_qq, qq_type
 
     # 是否是有效信息后续信息
-    def is_effect_info_last_info(self, keywords, svc, effect_time: int):
+    def is_effect_info_last_info(self, keywords, svc) -> bool:
         """是否是有效信息的后续信息"""
         table = svc.query(['*'])
         last_time = None
@@ -246,7 +248,7 @@ class HandleMessage:
                     break
 
         if last_time:  # 有有效信息
-            return not self.is_time_limit_exceeded(effect_time, last_time[0])  # 判断是否超时
+            return not self.is_time_limit_exceeded(config.effect_message_time, last_time[0])  # 判断是否超时
         else:
             return False  # 不是有效信息后续信息
 
@@ -293,7 +295,7 @@ class HandleMessage:
             return False
 
     # 是否是多步骤信息的重复信息
-    def is_contain_message(self, today_all_mes, introduce, svc_message, code):
+    def is_contain_message(self, today_all_mes, introduce, svc_message, code) -> bool:
         """判断是否是重复的多步骤优惠卷"""
         for i in today_all_mes:  # 判断是否是重复信息
             if introduce in i:  # 重复
@@ -319,6 +321,7 @@ class HandleMessage:
     # 处理普通信息
     def handle_normal_message(self, code, keywords, introduce, mes, send_qq, svc_message, qq_type,
                               need_get_more_message: bool, svc_context):
+        """处理普通信息"""
         local_time = time.localtime(time.time())
         mes_time = time.strftime("%m-%d %H:%M", local_time)
         # 优惠券数据
@@ -356,7 +359,7 @@ class HandleMessage:
 
     # 判断是否是可疑信息
     def get_more_message(self, mes: str, svc_context) -> Tuple[List, List[str]]:
-        # 判断是否是可疑信息
+        """判断是否是可疑信息"""
         uppercase_count = sum(1 for char in mes if char.isupper())
         digit_count = sum(1 for char in mes if char.islower())
         cnt = uppercase_count + digit_count  # 英文字符数量
@@ -386,7 +389,7 @@ class HandleMessage:
     # 发送可疑信息相关信息
     def send_context_message(self, mes: List, qq: list, qq_type: list, mes_id: str, image_url: list,
                              reverse=False) -> bool:
-
+        """发送可疑信息相关信息"""
         direction = '下' if not reverse else '上'
         if reverse:
             mes.reverse()
