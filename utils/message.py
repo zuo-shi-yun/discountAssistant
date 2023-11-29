@@ -13,7 +13,7 @@ from pkg.plugin.host import PluginHost
 from text2vec import SentenceModel, cos_sim
 
 import config
-from database import DatabaseManager
+from utils.database import DatabaseManager
 
 sale_mes_lock = threading.Lock()  # 消息锁
 
@@ -40,7 +40,7 @@ class HandleMessage:
         if not len(self.mes_chain[Plain]):  # 空信息返回不做后续处理
             return True
 
-        self.back_up_msg()  # 备份信息
+        Message.back_up_msg(self.mes_chain, self.qq)  # 备份信息
         # 判断是否是连续信息后续信息
         svc_group_control = DatabaseManager('groupMesControl')
         is_continuous_mes = svc_group_control.query(['is_continuous_mes'], {'QQ': self.qq})[0]  # 是否是连续信息的后续信息
@@ -69,7 +69,7 @@ class HandleMessage:
 
                     today_all_mes = DatabaseManager().get_today_all_message() or ['']  # 当天的全部筛选到的优惠卷消息
                     # 判断是否是重复消息、多步骤消息的重复消息
-                    is_repeat = self.is_repeat_message(today_all_mes, introduce, r"plugins\discountAssistant\model",
+                    is_repeat = self.is_repeat_message(today_all_mes, introduce, r"../plugins/discountAssistant/model",
                                                        svc_message, code)
                     is_contain = self.is_contain_message(today_all_mes, introduce, svc_message, code)
 
@@ -104,7 +104,7 @@ class HandleMessage:
                     # 可疑信息id
                     mes_id = svc_group_control.query(['mes_id'], {'qq': self.qq})[0]
                     # 发送信息
-                    self.send_context_message(all_mes, send_qq, qq_type, mes_id, all_url)
+                    Message(self.host).send_context_message(all_mes, send_qq, qq_type, mes_id, all_url)
                     # 恢复数据库
                     svc_group_control.update({'last_mes': '', 'context_num': 0, 'last_time': '',
                                               'mes_image_url': '', 'context_qq': '', 'qq_type': '', 'mes_id': ''},
@@ -116,20 +116,6 @@ class HandleMessage:
                                                   self.mes_chain[Image]) else '',
                                               'context_num': last_mes_no - 1}, {'qq': self.qq})
         return True
-
-    # 备份信息
-    def back_up_msg(self):
-        """
-        备份当前信息
-        :return:
-        """
-        mes = self.mes_chain[Plain][0].text if len(self.mes_chain[Plain]) else ''  # 文本信息
-        image = self.mes_chain[Image][0].url if len(self.mes_chain[Image]) else ''  # 图片url
-        local_time = time.localtime(time.time())
-        mes_time = time.strftime("%m-%d %H:%M", local_time)  # 时间
-        # 备份
-        svc_all_msg = DatabaseManager('allMes')
-        svc_all_msg.insert({'mes': mes, 'time': mes_time, 'image_url': image, 'receive_qq': self.qq})
 
     # 获得优惠券的介绍和代码
     @staticmethod
@@ -352,7 +338,8 @@ class HandleMessage:
 
             # 发送可疑信息附近信息
             if need_get_more_message and len(more_mes):
-                self.send_context_message(more_mes, [send_qq[i]], [qq_type[i]], mes_id, image_url, reverse=True)
+                Message(self.host).send_context_message(more_mes, [send_qq[i]], [qq_type[i]], mes_id, image_url,
+                                                        reverse=True)
                 # 同步上下文数据库
                 svc_context.update({'context_qq': ' '.join(send_qq), 'qq_type': ' '.join(qq_type), 'mes_id': mes_id},
                                    {'qq': self.qq})
@@ -386,6 +373,28 @@ class HandleMessage:
         else:
             return [], []
 
+
+class Message:
+    """处理信息链"""
+
+    def __init__(self, host):
+        self.host = host
+
+    # 备份信息
+    @staticmethod
+    def back_up_msg(mes_chain, qq):
+        """
+        备份当前信息
+        :return:
+        """
+        mes = mes_chain[Plain][0].text if len(mes_chain[Plain]) else ''  # 文本信息
+        image = mes_chain[Image][0].url if len(mes_chain[Image]) else ''  # 图片url
+        local_time = time.localtime(time.time())
+        mes_time = time.strftime("%m-%d %H:%M", local_time)  # 时间
+        # 备份
+        svc_all_msg = DatabaseManager('allMes')
+        svc_all_msg.insert({'mes': mes, 'time': mes_time, 'image_url': image, 'receive_qq': qq})
+
     # 发送可疑信息相关信息
     def send_context_message(self, mes: List, qq: list, qq_type: list, mes_id: str, image_url: list,
                              reverse=False) -> bool:
@@ -413,3 +422,38 @@ class HandleMessage:
                 self.host.send_person_message(qq[i], mes_chain)
 
         return True
+
+    # 得到可疑信息相关信息
+    @staticmethod
+    def get_context_message(qq: str, src_mes: str, message_cnt: int) -> Tuple[List, List]:
+        """得到可疑信息相关信息"""
+        svc = DatabaseManager('allMsg')
+        mes = svc.query(['mes', 'image_url'], {'receive_qq': qq})
+        forward = [[], []]
+        later = [[], []]
+        for i in mes:
+            if i['mes'] == src_mes:
+                index = mes.index(i)
+                # 构建前后信息链
+                for j in range(max(0, index - message_cnt), index):
+                    later[0].append(mes[j]['mes'])
+                    later[1].append(mes[j]['image_url'])
+                for j in range(index + 1, min(len(mes), index + message_cnt + 1)):
+                    forward[0].append(mes[j]['mes'])
+                    forward[1].append(mes[j]['image_url'])
+                break
+
+        return forward, later
+
+    # 得到信息链
+    @staticmethod
+    def get_mes_chain(plain_text: List[str], image_url: List[str], divide: str = '') -> List:
+        """得到信息链"""
+        ret = []
+        for i in range(len(plain_text)):
+            ret.append(Plain(plain_text[i]))
+            if 'http' in image_url[i]:
+                ret.append(Image(url=image_url[i]))
+
+            ret.append(divide)
+        return ret

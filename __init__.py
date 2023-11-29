@@ -1,9 +1,12 @@
 import logging
 import os
+import sys
 
 import requests
 
 import config
+
+sys.path.append('plugins/discountAssistant')  # 添加模块搜索路径
 
 
 def check_model() -> bool:
@@ -90,7 +93,7 @@ def main():
         logging.info('文本相似度模型已存在!')
 
     check_config()  # 检查配置项
-    from database import DatabaseManager
+    from utils.database import DatabaseManager
     DatabaseManager().init_database()  # 初始化数据库
 
 

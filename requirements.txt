@@ -1,3 +1,6 @@
-requests
+requests~=2.31.0
 yiri-mirai
-text2vec
+text2vec~=1.2.9
+jinja2~=3.1.2
+markdown~=3.5.1
+playwright~=1.40.0

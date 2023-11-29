@@ -2,8 +2,8 @@ from pkg.plugin.host import EventContext, PluginHost
 from pkg.plugin.models import *
 
 import config
-from cmd import HandleCmd
-from message import HandleMessage
+from utils.cmd import HandleCmd
+from utils.message import HandleMessage
 
 """
 自动筛选、发送淘宝、京东优惠券
@@ -27,6 +27,9 @@ class DiscountAssistant(Plugin):
             event.prevent_default()
             event.is_prevented_postorder()
 
+            if handle.ret_msg:  # 发送回复信息
+                event.add_return("reply", [handle.ret_msg])
+
     # 处理群、个人指令-非!cmd形式
     @on(PersonNormalMessageReceived)
     @on(GroupNormalMessageReceived)
@@ -39,6 +42,9 @@ class DiscountAssistant(Plugin):
             if handle.had_handle_cmd:
                 event.prevent_default()
                 event.is_prevented_postorder()
+
+                if handle.ret_msg:  # 发送回复信息
+                    event.add_return("reply", [handle.ret_msg])
 
     # 筛选优惠券
     @on(GroupMessageReceived)

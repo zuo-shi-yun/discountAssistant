@@ -1,6 +1,7 @@
 """
-数据库管理模块
+处理数据库操作。实现数据库CRUD逻辑
 """
+import re
 import sqlite3
 from datetime import datetime
 from sqlite3 import Cursor
@@ -8,7 +9,7 @@ from typing import List
 
 
 class DatabaseManager:
-    """封装数据库底层操作，并提供方法给上层使用"""
+    """数据库"""
 
     conn = None
     cursor = None
@@ -20,7 +21,8 @@ class DatabaseManager:
     # 连接到数据库文件
     def reconnect(self):
         """连接到数据库"""
-        self.conn = sqlite3.connect('plugins/discountAssistant/database.db', check_same_thread=False)
+        self.conn = sqlite3.connect('../plugins/discountAssistant/database.db', check_same_thread=False)
+        self.conn.row_factory = sqlite3.Row
         self.cursor = self.conn.cursor()
 
     def __execute__(self, *args, **kwargs) -> Cursor:
@@ -52,28 +54,35 @@ class DatabaseManager:
         return self.__execute__(sql)
 
     def query(self, query_col: List[str], query_where: dict = None) -> list:
-        """查询数据"""
+        """查询数据.查询条件只实现了and关系"""
+        # 构建查询列
         if len(query_col) == 1 and query_col[0] == '*':
             query_col_sql = '*'
         else:
             query_col_sql = '`' + '` ,`'.join(query_col) + '`'
 
         sql = f"select {query_col_sql} from {self.database}"
+
+        # 构建查询条件
         if query_where:
-            query_where = ' and '.join([f'`{k}`="{v}"' for k, v in query_where.items()])
+            # 使用正则表达式代表模糊查询,正则的模式代表模糊查询模式
+            query_where = ' and '.join(
+                [f'`{k}` like "{v.pattern}"' if isinstance(v, re.Pattern)
+                 else f'`{k}`="{v}"'
+                 for k, v in query_where.items()])
             sql += f" where {query_where}"
 
-        c = self.__execute__(sql)
+        rows = self.__execute__(sql)
 
         res = []
-        if len(query_col) == 1:  # 只查询一行
-            for i in c:
-                res.append(i[0])
+        if len(query_col) == 1 and query_col[0] != '*':  # 只查询一行
+            for row in rows:
+                res.append(row[0])
         else:  # 查询多行
-            temp_res = {}
-            for i in c:
-                for col in range(len(query_col)):
-                    temp_res[query_col[col]] = i[col]
+            for row in rows:  # 遍历行
+                temp_res = {}
+                for key in row.keys():  # 遍历列
+                    temp_res[key] = row[key]  # 添加单元
                 res.append(temp_res)
 
         return res
