@@ -39,7 +39,6 @@ def launch_browser(proxy=config.htmlrender_proxy_host, **kwargs) -> Browser:
     if config.htmlrender_browser == "firefox":
         logging.info("使用 firefox 启动")
         return _playwright.firefox.launch(**kwargs)
-
     else:
         # 默认使用 chromium
         logging.info("使用 chromium 启动")

@@ -1,6 +1,7 @@
 """处理用户指令。实现用户与系统交互逻辑"""
 import base64
 import re
+import time
 
 from mirai import Plain, Image
 from pkg.plugin.host import PluginHost
@@ -178,7 +179,7 @@ class HandleCmd:
         mes = []
 
         for i in all_mes:
-            if re.search(self.param[0], i, re.IGNORECASE | re.S):  # 符合正则
+            if re.search(self.param[0], i['mes'], re.IGNORECASE | re.S):  # 符合正则
                 mes.append(f"信息:{i['mes']}\n时间:{i['time']}\nID:{i['id']}")
                 image_url.append(i['image_url'])
 
@@ -275,8 +276,8 @@ class HandleCmd:
     def query_src_mes(self):
         """查询原信息"""
         svc = DatabaseManager('saleMes')  # 优惠券数据库
-        mes = svc.query(['src_mes', 'image_url'], {'id': (self.param[0])})  # 查询原信息
-        ret_mes = []
+        mes = svc.query(['src_mes', 'image_url'], {'id': int(self.param[0])})  # 查询原信息
+        find_src_mes = False
         for i in mes:  # 实际上最多执行一次
             text = f'{i["src_mes"]}'
             mes_chain = [Plain(text)]
@@ -284,10 +285,15 @@ class HandleCmd:
                 image_urls = i['image_url'].split()
                 for url in image_urls:
                     mes_chain.append(Image(url=url))
+            find_src_mes = True  # 找到了原信息
+            # 发送信息
+            if self.launcher_type == 0:
+                self.host.send_person_message(self.qq, mes_chain)
+            else:
+                self.host.send_group_message(self.qq, mes_chain)
 
-            ret_mes = mes_chain
-
-        self.ret_msg = ret_mes or f'没有找到对应{self.param[0]}的优惠券,请确保ID输入正确!'
+        if not find_src_mes:
+            self.ret_msg = f'没有找到对应{self.param[0]}的优惠券,请确保ID输入正确!'
 
     # 查询可疑信息相关信息信息
     @exception_decorator
@@ -304,10 +310,14 @@ class HandleCmd:
         later[1].reverse()
         # 发送原信息
         mes_chain = Message.get_mes_chain([src_mes], [image_url])
+        # 发送可疑信息相关信息
+        Message(self.cfg).send_context_message(forward[0], [self.qq], [self.launcher_type], self.param[0], forward[1],
+                                               reverse=True)
+        time.sleep(0.5)  # 保证顺序
         if self.launcher_type == 0:
             self.host.send_person_message(self.qq, mes_chain)
         else:
             self.host.send_group_message(self.qq, mes_chain)
         # 发送上下文信息
-        Message(self.cfg).send_context_message(forward[0], [self.qq], ['0'], self.param[0], forward[1], reverse=True)
-        Message(self.cfg).send_context_message(later[0], [self.qq], ['0'], self.param[0], later[1])
+        time.sleep(0.5)  # 保证顺序
+        Message(self.cfg).send_context_message(later[0], [self.qq], [self.launcher_type], self.param[0], later[1])

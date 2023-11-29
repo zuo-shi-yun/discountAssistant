@@ -5,3 +5,7 @@ jinja2~=3.1.2
 markdown~=3.5.1
 playwright~=1.40.0
 torch
+pytest-playwright
+pymdown-extensions
+typing
+python-markdown-math

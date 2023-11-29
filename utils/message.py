@@ -100,8 +100,8 @@ class HandleMessage:
                     all_url.append(self.mes_chain[Image][0].url if len(self.mes_chain[Image]) else '')  # 可疑信息图片
 
                     # qq号及类型
-                    send_qq = svc_group_control.query(['context_qq'], {'qq': self.qq})[0].split()
-                    qq_type = svc_group_control.query(['qq_type'], {'qq': self.qq})[0].split()
+                    send_qq = [int(i) for i in svc_group_control.query(['context_qq'], {'qq': self.qq})[0].split()]
+                    qq_type = [int(i) for i in svc_group_control.query(['qq_type'], {'qq': self.qq})[0].split()]
                     # 可疑信息id
                     mes_id = svc_group_control.query(['mes_id'], {'qq': self.qq})[0]
                     # 发送信息
@@ -327,19 +327,13 @@ class HandleMessage:
         image_url = []
         if need_get_more_message:
             more_mes, image_url = self.get_more_message(mes, svc_context)
+            more_mes.reverse()
+            image_url.reverse()
 
         # 构建信息链
         for i in range(len(send_qq)):
             text = f"""关键字:{keywords[i]}\n消息:{introduce}\n代码:{code}\nID:{mes_id}"""
             mes_chain = [Plain(text)]
-            # 发送普通QQ消息
-            if len(self.mes_chain[Image]):
-                mes_chain.append(Image(url=self.mes_chain[Image][0].url))
-
-            if qq_type[i] == 1:
-                self.host.send_group_message(group=send_qq[i], message=mes_chain)
-            elif qq_type[i] == 0:
-                self.host.send_person_message(person=send_qq[i], message=mes_chain)
 
             # 发送可疑信息附近信息
             if need_get_more_message:
@@ -350,6 +344,15 @@ class HandleMessage:
                     {'context_qq': ' '.join([str(i) for i in send_qq]), 'qq_type': ' '.join([str(i) for i in qq_type]),
                      'mes_id': mes_id},
                     {'qq': self.qq})
+            time.sleep(0.5)  # 保证顺序
+            # 发送普通QQ消息
+            if len(self.mes_chain[Image]):
+                mes_chain.append(Image(url=self.mes_chain[Image][0].url))
+
+            if qq_type[i] == 1:
+                self.host.send_group_message(group=send_qq[i], message=mes_chain)
+            elif qq_type[i] == 0:
+                self.host.send_person_message(person=send_qq[i], message=mes_chain)
 
     # 判断是否是可疑信息
     def get_more_message(self, mes: str, svc_context) -> Tuple[List, List[str]]:
@@ -413,12 +416,12 @@ class Message:
             mes.reverse()
             image_url.reverse()
 
-        mes_chain = [
-            f"""{mes_id}号消息疑似不是有效信息,这是{self.cfg.max_relate_message_time}分钟内该消息{direction}面的{len(mes)}条消息"""]
+        mes_chain = []
         # 构建信息链
         for i in range(len(mes)):
-            text = f"""\n------------------------------------------------------------------
-                该消息{direction}面的第{mes.index(mes[i]) + 1}条信息\n{mes[i]}"""
+            if i:
+                mes_chain.append('------------------------------------------------------------------\n')
+            text = f"""{mes[i]}\n"""
 
             mes_chain.append(Plain(text))
             if i < len(image_url) and 'http' in image_url[i]:
@@ -436,7 +439,7 @@ class Message:
     @staticmethod
     def get_context_message(qq: str, src_mes: str, message_cnt: int) -> Tuple[List, List]:
         """得到可疑信息相关信息"""
-        svc = DatabaseManager('allMsg')
+        svc = DatabaseManager('allMes')
         mes = svc.query(['mes', 'image_url'], {'receive_qq': qq})
         forward = [[], []]
         later = [[], []]
