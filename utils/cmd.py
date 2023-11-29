@@ -69,7 +69,7 @@ class HandleCmd:
     @exception_decorator
     def help(self):
         """帮助"""
-        md_image = md_to_pic(md_path=r'plugins\chatWithNotion\help.md', width=1050)
+        md_image = md_to_pic(md_path=r'plugins\discountAssistant\README.md', width=1050)
         b64_img = base64.b64encode(md_image).decode()
         self.ret_msg = Image(base64=b64_img, width=1050, height=5000)
 
