@@ -19,8 +19,8 @@ sale_mes_lock = threading.Lock()  # 消息锁
 
 
 class HandleMessage:
-    def __init__(self, host: PluginHost, **kwargs):
-        self.host = host
+    def __init__(self, **kwargs):
+        self.host = PluginHost()
 
         self.mes_chain = kwargs.get('message_chain')  # 消息链
         self.qq = kwargs.get('launcher_id')  # 发起者id,用户qq号或群qq号
@@ -104,7 +104,7 @@ class HandleMessage:
                     # 可疑信息id
                     mes_id = svc_group_control.query(['mes_id'], {'qq': self.qq})[0]
                     # 发送信息
-                    Message(self.host).send_context_message(all_mes, send_qq, qq_type, mes_id, all_url)
+                    Message().send_context_message(all_mes, send_qq, qq_type, mes_id, all_url)
                     # 恢复数据库
                     svc_group_control.update({'last_mes': '', 'context_num': 0, 'last_time': '',
                                               'mes_image_url': '', 'context_qq': '', 'qq_type': '', 'mes_id': ''},
@@ -338,8 +338,8 @@ class HandleMessage:
 
             # 发送可疑信息附近信息
             if need_get_more_message and len(more_mes):
-                Message(self.host).send_context_message(more_mes, [send_qq[i]], [qq_type[i]], mes_id, image_url,
-                                                        reverse=True)
+                Message().send_context_message(more_mes, [send_qq[i]], [qq_type[i]], mes_id, image_url,
+                                               reverse=True)
                 # 同步上下文数据库
                 svc_context.update({'context_qq': ' '.join(send_qq), 'qq_type': ' '.join(qq_type), 'mes_id': mes_id},
                                    {'qq': self.qq})
@@ -377,8 +377,8 @@ class HandleMessage:
 class Message:
     """处理信息链"""
 
-    def __init__(self, host):
-        self.host = host
+    def __init__(self):
+        self.host = PluginHost()
 
     # 备份信息
     @staticmethod

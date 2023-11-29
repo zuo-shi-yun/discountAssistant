@@ -1,5 +1,10 @@
+import os
+import sys
+
 from pkg.plugin.host import EventContext, PluginHost
 from pkg.plugin.models import *
+
+sys.path.append(os.path.join('plugins', 'discountAssistant'))
 
 import config
 from utils.cmd import HandleCmd
@@ -20,7 +25,7 @@ class DiscountAssistant(Plugin):
     @on(PersonCommandSent)
     @on(GroupCommandSent)
     def handle_cmd(self, event: EventContext, **kwargs):
-        handle = HandleCmd(self.host, kwargs['command'], kwargs['params'], **kwargs)
+        handle = HandleCmd(kwargs['command'], kwargs['params'], **kwargs)
 
         # 判断是否是本插件处理指令
         if handle.had_handle_cmd:
@@ -36,7 +41,7 @@ class DiscountAssistant(Plugin):
     def handle_normal_cmd(self, event: EventContext, **kwargs):
         if config.normal_cmd:  # 已开启非!cmd形式的命令
             text = kwargs['text_message'].split()  # 信息文本
-            handle = HandleCmd(self.host, text[0], text[1::], **kwargs)
+            handle = HandleCmd(text[0], text[1::], **kwargs)
 
             # 判断是否是本插件处理指令
             if handle.had_handle_cmd:
@@ -50,7 +55,7 @@ class DiscountAssistant(Plugin):
     @on(GroupMessageReceived)
     @on(PersonMessageReceived)
     def group_normal_message_received(self, event: EventContext, **kwargs):
-        handle = HandleMessage(self.host, **kwargs)  # 处理监听群信息
+        handle = HandleMessage(**kwargs)  # 处理监听群信息
 
         # 判断是否需要阻止默认事件、是否为监听群
         if config.prevent_listen_qq_msg and handle.had_handle_msg:

@@ -13,8 +13,8 @@ from utils.message import Message
 class HandleCmd:
     """处理用户指令"""
 
-    def __init__(self, host: PluginHost, cmd: str, param: list, **kwargs):
-        self.host = host
+    def __init__(self, cmd: str, param: list, **kwargs):
+        self.host = PluginHost()
 
         self.mes_chain = kwargs.get('message_chain')  # 消息链
         self.qq = kwargs.get('launcher_id')  # 发起者id,用户qq号或群qq号
