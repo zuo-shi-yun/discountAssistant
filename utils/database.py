@@ -33,22 +33,22 @@ class DatabaseManager:
     def insert(self, insert_data: dict) -> Cursor:
         """插入数据"""
         insert_key = '`' + '` ,`'.join(list(insert_data.keys())) + '`'
-        insert_value = "'" + "' ,'".join(list(insert_data.values())) + "'"
+        insert_value = ', '.join((f'"{v}"' if isinstance(v, str) else f'{v}') for v in insert_data.values())
         sql = f"insert into {self.database} ({insert_key}) values ({insert_value})"
         return self.__execute__(sql)
 
     def update(self, update_data: dict, where_data: dict) -> Cursor:
         """更新数据"""
-        update_data = [f'`{k}`="{v}"' for k, v in update_data.items()]
+        update_data = [(f'`{k}`="{v}"' if isinstance(v, str) else f'`{k}`={v}') for k, v in update_data.items()]
         update_data = ' ,'.join(update_data)
-        where_data = [f'`{k}`="{v}"' for k, v in where_data.items()]
+        where_data = [(f'`{k}`="{v}"' if isinstance(v, str) else f'`{k}`={v}') for k, v in where_data.items()]
         where_data = ' and '.join(where_data)
         sql = f"update {self.database} set {update_data} where {where_data}"
         return self.__execute__(sql)
 
     def delete(self, where_delete: dict) -> Cursor:
         """删除数据"""
-        where_delete = [f'`{k}`="{v}"' for k, v in where_delete.items()]
+        where_delete = [(f'`{k}`="{v}"' if isinstance(v, str) else f'`{k}`={v}') for k, v in where_delete.items()]
         where_delete = ' and '.join(where_delete)
         sql = f"delete from {self.database} where {where_delete}"
         return self.__execute__(sql)
@@ -68,7 +68,8 @@ class DatabaseManager:
             # 使用正则表达式代表模糊查询,正则的模式代表模糊查询模式
             query_where = ' and '.join(
                 [f'`{k}` like "{v.pattern}"' if isinstance(v, re.Pattern)
-                 else f'`{k}`="{v}"'
+                 else f'`{k}`="{v}"' if isinstance(v, str)
+                else f'`{k}`={v}'
                  for k, v in query_where.items()])
             sql += f" where {query_where}"
 

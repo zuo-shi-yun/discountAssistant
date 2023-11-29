@@ -60,6 +60,7 @@ class HandleCmd:
                 return func(self, *args, **kwargs)
             except Exception as e:
                 self.ret_msg = f'失败!{e}'
+                raise e
 
         return wrapper
 

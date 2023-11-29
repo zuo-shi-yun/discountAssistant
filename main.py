@@ -6,7 +6,7 @@ from pkg.plugin.models import *
 
 sys.path.append(os.path.join('plugins', 'discountAssistant'))
 
-import config
+from . import config
 from utils.cmd import HandleCmd
 from utils.message import HandleMessage
 

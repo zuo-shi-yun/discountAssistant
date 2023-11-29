@@ -4,8 +4,6 @@ import sys
 
 import requests
 
-from . import config
-
 sys.path.append('plugins/discountAssistant')  # 添加模块搜索路径
 
 
