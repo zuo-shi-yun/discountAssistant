@@ -53,7 +53,7 @@ class DatabaseManager:
         sql = f"delete from {self.database} where {where_delete}"
         return self.__execute__(sql)
 
-    def query(self, query_col: List[str], query_where: dict = None) -> list:
+    def query(self, query_col: List[str], query_where: dict = None, reverse: bool = True) -> list:
         """查询数据.查询条件只实现了and关系"""
         # 构建查询列
         if len(query_col) == 1 and query_col[0] == '*':
@@ -71,6 +71,10 @@ class DatabaseManager:
                  else f'`{k}`="{v}"' if isinstance(v, str) else f'`{k}`={v}'
                  for k, v in query_where.items()])
             sql += f" where {query_where}"
+
+        # 逆序
+        if reverse:
+            sql += ' order by id desc'
 
         rows = self.__execute__(sql)
 
@@ -165,7 +169,7 @@ class DatabaseManager:
         """得到当天的全部优惠卷信息"""
         month = datetime.now().month
         day = datetime.now().day
-        sql = "select mes from allMes where `time` like '{:02}-{:02} %:%'".format(month, day)
+        sql = "select mes from saleMes where `time` like '{:02}-{:02} %:%'".format(month, day)
         c = self.__execute__(sql)
         ret = []
         for i in c:

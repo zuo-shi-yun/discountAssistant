@@ -79,8 +79,9 @@ class HandleMessage:
                             last_no = svc_group_control.query(['last_no'], {'qq': self.qq})[0]
                             if int(re.match(r'^(\d)[.、]', introduce).group(1)) == last_no + 1:  # 满足序号递增条件
                                 # 更新多步骤数据库
-                                svc_group_control.update({'is_continuous_mes': 1, 'send_qq': ' '.join(send_qq),
-                                                          'last_no': {last_no + 1}}, {'qq': self.qq})
+                                svc_group_control.update(
+                                    {'is_continuous_mes': 1, 'send_qq': ' '.join([str(i) for i in send_qq]),
+                                     'last_no': last_no + 1}, {'qq': self.qq})
                         # 普通消息处理流程
                         self.handle_normal_message(code, keywords, introduce, mes_plain, send_qq, svc_message,
                                                    qq_type, need_get_more_message, svc_group_control)
@@ -189,6 +190,9 @@ class HandleMessage:
                                 self.host.send_person_message(send_qq[i], mes_chain)
 
                         return True  # 是多步骤信息后续信息
+            else:
+                svc_continuous.update({'is_continuous_mes': 0, 'send_qq': '', 'last_no': 0}, {'qq': self.qq})  # 复原数据库
+                return False
         else:  # 取消多步骤消息
             svc_continuous.update({'is_continuous_mes': 0, 'send_qq': '', 'last_no': 0}, {'qq': self.qq})  # 复原数据库
             return False
@@ -208,7 +212,7 @@ class HandleMessage:
                 if re.search(key_word, mes, re.IGNORECASE | re.S):  # 忽略大小写、多行匹配
                     # 添加推送QQ
                     if key_words['send_mes']:  # 需要信息通知时才通知
-                        send_qq.append(key_words['qq'])
+                        send_qq.append((key_words['qq']))
                         qq_type.append(key_words['qq_type'])
                         find_keyword.append(key_word)
 
@@ -220,13 +224,13 @@ class HandleMessage:
     # 是否是有效信息后续信息
     def is_effect_info_last_info(self, keywords, svc) -> bool:
         """是否是有效信息的后续信息"""
-        table = svc.query(['*'])
+        table = svc.query(['*'])  # 优惠卷数据库
         last_time = None
         for raw in table:
             if f'{self.qq}' in raw['receive_qq']:
-                find_keyword = False
+                find_keyword = False  # 标记是否找到对应可疑信息关键字的有效信息
                 for keyword in keywords:
-                    if keyword in raw['keyword']:
+                    if keyword in raw['keyword'].split():  # 找到了
                         find_keyword = True
                         break
                 if find_keyword:
@@ -234,7 +238,7 @@ class HandleMessage:
                     break
 
         if last_time:  # 有有效信息
-            return not self.is_time_limit_exceeded(self.cfg.effect_message_time, last_time[0])  # 判断是否超时
+            return not self.is_time_limit_exceeded(self.cfg.effect_message_time, last_time)  # 判断是否超时
         else:
             return False  # 不是有效信息后续信息
 
@@ -313,10 +317,10 @@ class HandleMessage:
         mes_time = time.strftime("%m-%d %H:%M", local_time)
         # 优惠券数据
         insert_data = {'receive_qq': self.qq, 'mes': introduce, 'keyword': ' '.join(keywords),
-                       'time': mes_time, 'code': code, 'src_mes': mes, 'send_qq': ' '.join(send_qq),
+                       'time': mes_time, 'code': code, 'src_mes': mes, 'send_qq': ' '.join([str(i) for i in send_qq]),
                        'image_url': self.mes_chain[Image][0].url if len(self.mes_chain[Image]) else ''}
         svc_message.insert(insert_data)  # 更新数据库
-        mes_id = svc_message.query(['id'], {'原信息': mes})[0]  # 优惠券id
+        mes_id = svc_message.query(['id'], {'src_mes': mes})[0]  # 优惠券id
 
         # 判断是否是可疑信息
         more_mes = []  # 可疑信息相关信息
@@ -338,12 +342,14 @@ class HandleMessage:
                 self.host.send_person_message(person=send_qq[i], message=mes_chain)
 
             # 发送可疑信息附近信息
-            if need_get_more_message and len(more_mes):
+            if need_get_more_message:
                 Message(self.cfg).send_context_message(more_mes, [send_qq[i]], [qq_type[i]], mes_id, image_url,
                                                        reverse=True)
                 # 同步上下文数据库
-                svc_context.update({'context_qq': ' '.join(send_qq), 'qq_type': ' '.join(qq_type), 'mes_id': mes_id},
-                                   {'qq': self.qq})
+                svc_context.update(
+                    {'context_qq': ' '.join([str(i) for i in send_qq]), 'qq_type': ' '.join([str(i) for i in qq_type]),
+                     'mes_id': mes_id},
+                    {'qq': self.qq})
 
     # 判断是否是可疑信息
     def get_more_message(self, mes: str, svc_context) -> Tuple[List, List[str]]:
@@ -352,6 +358,7 @@ class HandleMessage:
         digit_count = sum(1 for char in mes if char.islower())
         cnt = uppercase_count + digit_count  # 英文字符数量
         if cnt < self.cfg.suspicious_mes and 'http' not in mes:  # 是可疑信息
+            logging.info(f'{self.qq}的{mes}被判定为可疑信息')
             svc_all_message = DatabaseManager('allMes')
             all_message = svc_all_message.query(['mes', 'time', 'image_url'], {'receive_qq': self.qq})  # 备份信息
             context_num = self.cfg.relate_message_num  # 相关信息数量限制
@@ -408,7 +415,7 @@ class Message:
 
         mes_chain = [
             f"""{mes_id}号消息疑似不是有效信息,这是{self.cfg.max_relate_message_time}分钟内该消息{direction}面的{len(mes)}条消息"""]
-
+        # 构建信息链
         for i in range(len(mes)):
             text = f"""\n------------------------------------------------------------------
                 该消息{direction}面的第{mes.index(mes[i]) + 1}条信息\n{mes[i]}"""
@@ -416,11 +423,11 @@ class Message:
             mes_chain.append(Plain(text))
             if i < len(image_url) and 'http' in image_url[i]:
                 mes_chain.append(Image(url=image_url[i]))
-
+        # 发送信息
         for i in range(len(qq)):
-            if qq_type[i] == '1':
+            if qq_type[i] == 1:
                 self.host.send_group_message(qq[i], mes_chain)
-            elif qq_type[i] == '0':
+            elif qq_type[i] == 0:
                 self.host.send_person_message(qq[i], mes_chain)
 
         return True
