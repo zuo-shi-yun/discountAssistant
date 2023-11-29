@@ -1,12 +1,15 @@
 import logging
 import os
-import sys
 
 import requests
 
-import config
+from . import config
+from .utils.cmd import HandleCmd
+from .utils.database import DatabaseManager
+from .utils.md import data_source, browser
+from .utils.message import HandleMessage, Message
 
-sys.path.append('plugins/discountAssistant')  # 添加模块搜索路径
+__all__ = [HandleCmd, HandleMessage, DatabaseManager, data_source, browser, Message, config]
 
 
 def check_model() -> bool:
@@ -93,7 +96,6 @@ def main():
         logging.info('文本相似度模型已存在!')
 
     check_config()  # 检查配置项
-    from utils.database import DatabaseManager
     DatabaseManager().init_database()  # 初始化数据库
 
 
