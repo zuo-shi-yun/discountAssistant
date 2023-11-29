@@ -83,7 +83,7 @@ class HandleCmd:
         svc_listen_qq = DatabaseManager('listenQQ')
         src_qq_group = svc_listen_qq.query(['listen_qq'])  # 已有监听群
         # 是否已经监听该群
-        if self.param[0] not in src_qq_group:  # 没有监听
+        if int(self.param[0]) not in src_qq_group:  # 没有监听
             svc_listen_qq.insert({'listen_qq': self.param[0]})
             self.ret_msg = f'成功,请确保已请将我邀请进这个QQ群^_^\n本系统目前共在{len(src_qq_group) + 1}个群中搜索,本系统具有基于文本相似度算法的去重功能,不必担心消息重复'
         else:
