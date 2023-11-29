@@ -69,7 +69,7 @@ class HandleMessage:
 
                     today_all_mes = DatabaseManager().get_today_all_message() or ['']  # 当天的全部筛选到的优惠卷消息
                     # 判断是否是重复消息、多步骤消息的重复消息
-                    is_repeat = self.is_repeat_message(today_all_mes, introduce, r"../plugins/discountAssistant/model",
+                    is_repeat = self.is_repeat_message(today_all_mes, introduce, r"plugins/discountAssistant/model",
                                                        svc_message, code)
                     is_contain = self.is_contain_message(today_all_mes, introduce, svc_message, code)
 
