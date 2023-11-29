@@ -1,5 +1,5 @@
 """
-处理优惠券信息的流程代码。实现筛选优惠券的全部逻辑
+处理优惠券信息的流程代码。实现筛选优惠券逻辑
 """
 import logging
 import re
@@ -22,12 +22,12 @@ class HandleMessage:
     def __init__(self, host: PluginHost, **kwargs):
         self.host = host
 
-        self.mes_chain = kwargs.get('message_chain')
-        self.qq = kwargs.get('launcher_id')
-        self.sender_id = kwargs.get('sender_id')
-        self.launcher_type = kwargs.get('launcher_type')
+        self.mes_chain = kwargs.get('message_chain')  # 消息链
+        self.qq = kwargs.get('launcher_id')  # 发起者id,用户qq号或群qq号
+        self.sender_id = kwargs.get('sender_id')  # 发送者id
+        self.launcher_type = kwargs.get('launcher_type')  # 消息类型
 
-        self.had_handle_msg = self.handle()
+        self.had_handle_msg = self.handle()  # 处理流程
 
     # 优惠券处理流程
     def handle(self) -> bool:
