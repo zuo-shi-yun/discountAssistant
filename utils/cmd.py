@@ -13,8 +13,9 @@ from utils.message import Message
 class HandleCmd:
     """处理用户指令"""
 
-    def __init__(self, cmd: str, param: list, **kwargs):
+    def __init__(self, config, cmd: str, param: list, **kwargs):
         self.host = PluginHost()
+        self.cfg = config
 
         self.mes_chain = kwargs.get('message_chain')  # 消息链
         self.qq = kwargs.get('launcher_id')  # 发起者id,用户qq号或群qq号
@@ -308,5 +309,5 @@ class HandleCmd:
         else:
             self.host.send_group_message(self.qq, mes_chain)
         # 发送上下文信息
-        Message().send_context_message(forward[0], [self.qq], ['0'], self.param[0], forward[1], reverse=True)
-        Message().send_context_message(later[0], [self.qq], ['0'], self.param[0], later[1])
+        Message(self.cfg).send_context_message(forward[0], [self.qq], ['0'], self.param[0], forward[1], reverse=True)
+        Message(self.cfg).send_context_message(later[0], [self.qq], ['0'], self.param[0], later[1])

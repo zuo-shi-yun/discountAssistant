@@ -6,7 +6,7 @@ from pkg.plugin.models import *
 
 sys.path.append(os.path.join('plugins', 'discountAssistant'))
 
-from . import config
+from .config import Config
 from utils.cmd import HandleCmd
 from utils.message import HandleMessage
 
@@ -20,12 +20,13 @@ from utils.message import HandleMessage
 class DiscountAssistant(Plugin):
     def __init__(self, plugin_host: PluginHost):
         self.host = plugin_host
+        self.cfg = Config()
 
     # 处理群、个人指令-!cmd形式
     @on(PersonCommandSent)
     @on(GroupCommandSent)
     def handle_cmd(self, event: EventContext, **kwargs):
-        handle = HandleCmd(kwargs['command'], kwargs['params'], **kwargs)
+        handle = HandleCmd(self.cfg, kwargs['command'], kwargs['params'], **kwargs)
 
         # 判断是否是本插件处理指令
         if handle.had_handle_cmd:
@@ -42,9 +43,9 @@ class DiscountAssistant(Plugin):
     @on(PersonNormalMessageReceived)
     @on(GroupNormalMessageReceived)
     def handle_normal_cmd(self, event: EventContext, **kwargs):
-        if config.normal_cmd:  # 已开启非!cmd形式的命令
+        if self.cfg.normal_cmd:  # 已开启非!cmd形式的命令
             text = kwargs['text_message'].split()  # 信息文本
-            handle = HandleCmd(text[0], text[1::], **kwargs)
+            handle = HandleCmd(self.cfg, text[0], text[1::], **kwargs)
 
             # 判断是否是本插件处理指令
             if handle.had_handle_cmd:
@@ -61,12 +62,16 @@ class DiscountAssistant(Plugin):
     @on(GroupMessageReceived)
     @on(PersonMessageReceived)
     def group_normal_message_received(self, event: EventContext, **kwargs):
-        handle = HandleMessage(**kwargs)  # 处理监听群信息
+        handle = HandleMessage(self.cfg, **kwargs)  # 处理监听群信息
 
         # 判断是否需要阻止默认事件、是否为监听群
-        if config.prevent_listen_qq_msg and handle.had_handle_msg:
+        if self.cfg.prevent_listen_qq_msg and handle.had_handle_msg:
             event.prevent_default()  # 屏蔽默认事件
 
     # 插件卸载时触发
     def __del__(self):
         pass
+
+
+if __name__ == 'main':
+    pass

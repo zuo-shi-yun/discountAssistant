@@ -12,15 +12,15 @@ from mirai import Plain, Image
 from pkg.plugin.host import PluginHost
 from text2vec import SentenceModel, cos_sim
 
-import config
 from utils.database import DatabaseManager
 
 sale_mes_lock = threading.Lock()  # 消息锁
 
 
 class HandleMessage:
-    def __init__(self, **kwargs):
+    def __init__(self, config, **kwargs):
         self.host = PluginHost()
+        self.cfg = config
 
         self.mes_chain = kwargs.get('message_chain')  # 消息链
         self.qq = kwargs.get('launcher_id')  # 发起者id,用户qq号或群qq号
@@ -90,7 +90,7 @@ class HandleMessage:
                 src_mes = svc_group_control.query(['last_mes'], {'qq': self.qq})[0]
                 src_url = svc_group_control.query(['mes_image_url'], {'qq': self.qq})[0]
                 # 在时间内则更新
-                if self.is_time_limit_exceeded(config.max_relate_message_time,
+                if self.is_time_limit_exceeded(self.cfg.max_relate_message_time,
                                                mes_time) or last_mes_no == 1:  # 最后一条消息或已超时
                     all_mes = src_mes.split('$')  # 获得可疑消息相关信息文本
                     all_mes.append(mes_plain)  # 可疑信息相关信息文本
@@ -104,7 +104,7 @@ class HandleMessage:
                     # 可疑信息id
                     mes_id = svc_group_control.query(['mes_id'], {'qq': self.qq})[0]
                     # 发送信息
-                    Message().send_context_message(all_mes, send_qq, qq_type, mes_id, all_url)
+                    Message(self.cfg).send_context_message(all_mes, send_qq, qq_type, mes_id, all_url)
                     # 恢复数据库
                     svc_group_control.update({'last_mes': '', 'context_num': 0, 'last_time': '',
                                               'mes_image_url': '', 'context_qq': '', 'qq_type': '', 'mes_id': ''},
@@ -234,7 +234,7 @@ class HandleMessage:
                     break
 
         if last_time:  # 有有效信息
-            return not self.is_time_limit_exceeded(config.effect_message_time, last_time[0])  # 判断是否超时
+            return not self.is_time_limit_exceeded(self.cfg.effect_message_time, last_time[0])  # 判断是否超时
         else:
             return False  # 不是有效信息后续信息
 
@@ -272,7 +272,7 @@ class HandleMessage:
         # 比较相似度
         for i in range(len(cosine_scores)):
             # 高于设定值判定为重复文本
-            if float(re.search(r'tensor\(\[(.*)]\)', str(cosine_scores[i])).group(1)) > config.similarity:
+            if float(re.search(r'tensor\(\[(.*)]\)', str(cosine_scores[i])).group(1)) > self.cfg.similarity:
                 logging.info(f'文本相似度审查未通过,重复文本: {today_all_mes[i]},相似度:{cosine_scores[i]}')
                 self.handle_repeat_message(svc_message, today_all_mes[i], code)  # 处理重复信息流程
                 return True
@@ -338,8 +338,8 @@ class HandleMessage:
 
             # 发送可疑信息附近信息
             if need_get_more_message and len(more_mes):
-                Message().send_context_message(more_mes, [send_qq[i]], [qq_type[i]], mes_id, image_url,
-                                               reverse=True)
+                Message(self.cfg).send_context_message(more_mes, [send_qq[i]], [qq_type[i]], mes_id, image_url,
+                                                       reverse=True)
                 # 同步上下文数据库
                 svc_context.update({'context_qq': ' '.join(send_qq), 'qq_type': ' '.join(qq_type), 'mes_id': mes_id},
                                    {'qq': self.qq})
@@ -350,11 +350,11 @@ class HandleMessage:
         uppercase_count = sum(1 for char in mes if char.isupper())
         digit_count = sum(1 for char in mes if char.islower())
         cnt = uppercase_count + digit_count  # 英文字符数量
-        if cnt < config.suspicious_mes and 'http' not in mes:  # 是可疑信息
+        if cnt < self.cfg.suspicious_mes and 'http' not in mes:  # 是可疑信息
             svc_all_message = DatabaseManager('allMes')
             all_message = svc_all_message.query(['mes', 'time', 'image_url'], {'receive_qq': self.qq})  # 备份信息
-            context_num = config.relate_message_num  # 相关信息数量限制
-            max_context_time = config.max_relate_message_time  # 相关信息时间限制
+            context_num = self.cfg.relate_message_num  # 相关信息数量限制
+            max_context_time = self.cfg.max_relate_message_time  # 相关信息时间限制
             local_time = time.localtime(time.time())
             mes_time = time.strftime("%m-%d %H:%M", local_time)  # 当前时间
             svc_context.update({'context_num': context_num, 'last_time': mes_time}, {'qq': self.qq})  # 更新数据库
@@ -377,8 +377,9 @@ class HandleMessage:
 class Message:
     """处理信息链"""
 
-    def __init__(self):
+    def __init__(self, config):
         self.host = PluginHost()
+        self.cfg = config
 
     # 备份信息
     @staticmethod
@@ -405,7 +406,7 @@ class Message:
             image_url.reverse()
 
         mes_chain = [
-            f"""{mes_id}号消息疑似不是有效信息,这是{config.max_relate_message_time}分钟内该消息{direction}面的{len(mes)}条消息"""]
+            f"""{mes_id}号消息疑似不是有效信息,这是{self.cfg.max_relate_message_time}分钟内该消息{direction}面的{len(mes)}条消息"""]
 
         for i in range(len(mes)):
             text = f"""\n------------------------------------------------------------------
