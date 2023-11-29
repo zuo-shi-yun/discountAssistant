@@ -21,7 +21,7 @@ class DatabaseManager:
     # 连接到数据库文件
     def reconnect(self):
         """连接到数据库"""
-        self.conn = sqlite3.connect('plugins/discountAssistant/database.db', check_same_thread=False)
+        self.conn = sqlite3.connect('../plugins/discountAssistant/database.db', check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         self.cursor = self.conn.cursor()
 

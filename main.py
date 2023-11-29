@@ -1,9 +1,9 @@
 from pkg.plugin.host import EventContext, PluginHost
 from pkg.plugin.models import *
 
+import config
 from utils.cmd import HandleCmd
 from utils.message import HandleMessage
-from . import config
 
 """
 自动筛选、发送淘宝、京东优惠券
