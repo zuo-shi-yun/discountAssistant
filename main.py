@@ -35,6 +35,9 @@ class DiscountAssistant(Plugin):
             if handle.ret_msg:  # 发送回复信息
                 event.add_return("reply", [handle.ret_msg])
 
+            if handle.e:  # 显式报错
+                raise handle.e
+
     # 处理群、个人指令-非!cmd形式
     @on(PersonNormalMessageReceived)
     @on(GroupNormalMessageReceived)
@@ -50,6 +53,9 @@ class DiscountAssistant(Plugin):
 
                 if handle.ret_msg:  # 发送回复信息
                     event.add_return("reply", [handle.ret_msg])
+
+                if handle.e:  # 显式报错
+                    raise handle.e
 
     # 筛选优惠券
     @on(GroupMessageReceived)

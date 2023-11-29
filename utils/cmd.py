@@ -26,6 +26,7 @@ class HandleCmd:
         self.param = param  # 命令参数
 
         self.had_handle_cmd = self.handle()  # 处理流程
+        self.e = None
 
     def handle(self) -> bool:
         handle_func = {
@@ -60,7 +61,7 @@ class HandleCmd:
                 return func(self, *args, **kwargs)
             except Exception as e:
                 self.ret_msg = f'失败!{e}'
-                raise e
+                self.e = e
 
         return wrapper
 
@@ -138,7 +139,7 @@ class HandleCmd:
             new_keyword = svc.query(['keywords'], {'qq': self.qq})[0] + ' ' + keyword
             svc.update({'keywords': new_keyword}, {'qq': self.qq})  # 更新数据库
         else:
-            svc.insert({'qq': self.qq, 'keywords': keyword, 'send_message': 1, 'qq_type': self.launcher_type})
+            svc.insert({'qq': self.qq, 'keywords': keyword, 'send_mes': 1, 'qq_type': self.launcher_type})
         # 若已有回复信息则使用原有信息
         self.ret_msg = self.ret_msg or f'成功,若筛选到含有关键字的消息将自动发送给你,若不希望自动发送,请发送“关闭发送”\n检索关键字为:{keyword}'
 
@@ -214,7 +215,7 @@ class HandleCmd:
     def open_message(self):
         """打开实时发送"""
         svc = DatabaseManager('keyword')
-        svc.update({'send_message': 1}, {'qq': self.qq})
+        svc.update({'send_mes': 1}, {'qq': self.qq})
         self.ret_msg = '成功,后续消息将实时发送'
 
     # 关闭实时发送
