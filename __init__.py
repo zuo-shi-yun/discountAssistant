@@ -43,46 +43,49 @@ def check_config():
     检查配置文件是否完整
     :return:
     """
-    if not hasattr(config, 'similarity'):
+
+    cfg = config.Config()
+
+    if not hasattr(cfg, 'similarity'):
         raise ValueError('没有similarity配置项')
-    elif config.similarity <= 0 or config.similarity >= 1:
+    elif cfg.similarity <= 0 or cfg.similarity >= 1:
         raise ValueError('similarity配置项值不正确')
 
-    if not hasattr(config, 'suspicious_mes'):
+    if not hasattr(cfg, 'suspicious_mes'):
         raise ValueError('没有suspicious_mes配置项')
-    elif not isinstance(config.suspicious_mes, int):
+    elif not isinstance(cfg.suspicious_mes, int):
         raise ValueError('suspicious_mes配置项值不正确')
 
-    if not hasattr(config, 'relate_message_num'):
+    if not hasattr(cfg, 'relate_message_num'):
         raise ValueError('没有relate_message_num配置项')
-    elif not isinstance(config.relate_message_num, int):
+    elif not isinstance(cfg.relate_message_num, int):
         raise ValueError('relate_message_num配置项值不正确')
 
-    if not hasattr(config, 'max_relate_message_time'):
+    if not hasattr(cfg, 'max_relate_message_time'):
         raise ValueError('没有max_relate_message_time配置项')
-    elif not isinstance(config.max_relate_message_time, int):
+    elif not isinstance(cfg.max_relate_message_time, int):
         raise ValueError('max_relate_message_time配置项值不正确')
 
-    if not hasattr(config, 'effect_message_time'):
+    if not hasattr(cfg, 'effect_message_time'):
         raise ValueError('没有effect_message_time配置项')
-    elif not isinstance(config.effect_message_time, int):
+    elif not isinstance(cfg.effect_message_time, int):
         raise ValueError('effect_message_time配置项值不正确')
 
-    if not hasattr(config, 'normal_cmd'):
+    if not hasattr(cfg, 'normal_cmd'):
         raise ValueError('没有normal_cmd配置项')
-    elif not isinstance(config.normal_cmd, bool):
+    elif not isinstance(cfg.normal_cmd, bool):
         raise ValueError('normal_cmd配置项值不正确')
 
-    if not hasattr(config, 'prevent_listen_qq_msg'):
+    if not hasattr(cfg, 'prevent_listen_qq_msg'):
         raise ValueError('prevent_listen_qq_msg')
-    elif not isinstance(config.prevent_listen_qq_msg, bool):
+    elif not isinstance(cfg.prevent_listen_qq_msg, bool):
         raise ValueError('prevent_listen_qq_msg配置项值不正确')
 
 
 def main():
     if not check_model():
         try:
-            logging.critical('模型下载中...请耐心等待')
+            logging.critical('模型下载中...\n该过程约1分钟,请耐心等待')
             download_model()
             logging.critical('模型下载成功!')
         except Exception as e:
