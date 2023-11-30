@@ -6,6 +6,7 @@ import time
 from mirai import Image
 from pkg.plugin.host import PluginHost
 
+from utils.clear import clear_task
 from utils.database import DatabaseManager
 from utils.md.data_source import md_to_pic
 from utils.message import Message
@@ -30,6 +31,19 @@ class HandleCmd:
 
         self.had_handle_cmd = self.handle()  # 处理流程
 
+    # 异常包裹器
+    @staticmethod
+    def exception_decorator(func):
+        def wrapper(self, *args, **kwargs):  # self is the instance of class A
+            try:
+                return func(self, *args, **kwargs)
+            except Exception as e:
+                self.ret_msg = f'失败!{e}'
+                self.e = e
+
+        return wrapper
+
+    @exception_decorator
     def handle(self) -> bool:
         handle_func = {
             '帮助': self.help,
@@ -47,6 +61,7 @@ class HandleCmd:
             '删除群': self.delete_group,
             '删除关键字': self.delete_keyword,
             '删除关键字序号': self.delete_keyword_by_no,
+            '清理数据库': self.clear_database
         }
 
         if self.cmd in handle_func:  # 是本插件处理指令
@@ -55,20 +70,7 @@ class HandleCmd:
         else:
             return False
 
-    # 异常包裹器
-    @staticmethod
-    def exception_decorator(func):
-        def wrapper(self, *args, **kwargs):  # self is the instance of class A
-            try:
-                return func(self, *args, **kwargs)
-            except Exception as e:
-                self.ret_msg = f'失败!{e}'
-                self.e = e
-
-        return wrapper
-
     # 帮助
-    @exception_decorator
     def help(self):
         """帮助"""
         md_image = md_to_pic(md_path=r'plugins\discountAssistant\README.md', width=1050)
@@ -76,7 +78,6 @@ class HandleCmd:
         self.ret_msg = Image(base64=b64_img, width=1050, height=5000)
 
     # 添加监听群
-    @exception_decorator
     def insert_group(self):
         # 添加群管理数据库
         svc_group_control = DatabaseManager('groupMesControl')
@@ -92,7 +93,6 @@ class HandleCmd:
             self.ret_msg = '我已经监听了这个群,无需重复添加'
 
     # 添加关键字
-    @exception_decorator
     def insert_keyword(self):
         """添加关键字"""
         svc = DatabaseManager('keyword')  # 关键字数据库
@@ -146,7 +146,6 @@ class HandleCmd:
         self.ret_msg = self.ret_msg or f'成功,若筛选到含有关键字的消息将自动发送给你,若不希望自动发送,请发送“关闭发送”\n检索关键字为:{keyword}'
 
     # 查询优惠券信息
-    @exception_decorator
     def query_sale_message(self):
         """查询优惠卷信息"""
         svc = DatabaseManager('saleMes')  # 优惠券数据库
@@ -162,7 +161,6 @@ class HandleCmd:
         self.ret_msg = '' if len(msgs) else f'没有找到对应{self.param[0]}的优惠券,请确保关键字已添加,或过一段时间再来!'
 
     # 查询含有关键字的所有信息
-    @exception_decorator
     def query_all_message(self):
         """在全部信息中查询含有关键字的信息"""
         svc = DatabaseManager('allMes')  # 全部信息数据库
@@ -186,7 +184,6 @@ class HandleCmd:
             self.ret_msg = f'没有找到对应{self.param[0]}的信息'
 
     # 查询关键字
-    @exception_decorator
     def query_keywords(self):
         """查询关键字"""
         svc = DatabaseManager('keyword')  # 关键字数据库
@@ -202,7 +199,6 @@ class HandleCmd:
         self.ret_msg = ret_mess
 
     # 打开实时发送
-    @exception_decorator
     def open_message(self):
         """打开实时发送"""
         svc = DatabaseManager('keyword')
@@ -210,7 +206,6 @@ class HandleCmd:
         self.ret_msg = '成功,后续消息将实时发送'
 
     # 关闭实时发送
-    @exception_decorator
     def close_message(self):
         """关闭实时发送"""
         svc = DatabaseManager('keyword')
@@ -218,7 +213,6 @@ class HandleCmd:
         self.ret_msg = '成功,后续消息将不会实时发送。\n可以通过“查询优惠券 关键字”指令查询相关优惠券'
 
     # 删除监听群
-    @exception_decorator
     def delete_group(self):
         """删除监听群"""
         svc_listen_qq = DatabaseManager('listenQQ')  # 监听群数据库
@@ -233,7 +227,6 @@ class HandleCmd:
             self.ret_msg = '我本来就没有检测这个群'
 
     # 删除关键字
-    @exception_decorator
     def delete_keyword(self):
         """删除关键字"""
         svc = DatabaseManager('keyword')  # 关键字数据库
@@ -247,7 +240,6 @@ class HandleCmd:
             self.ret_msg = '我本来就没有检测这个关键字'
 
     # 通过关键字删除序号
-    @exception_decorator
     def delete_keyword_by_no(self):
         """通过关键字删除序号"""
         svc = DatabaseManager('keyword')  # 关键字数据库
@@ -261,7 +253,6 @@ class HandleCmd:
             self.ret_msg = '序号错误'
 
     # 查询原信息
-    @exception_decorator
     def query_src_mes(self):
         """查询原信息"""
         svc = DatabaseManager('saleMes')  # 优惠券数据库
@@ -278,7 +269,6 @@ class HandleCmd:
             self.ret_msg = f'没有找到对应{self.param[0]}的优惠券,请确保ID输入正确!'
 
     # 查询可疑信息相关信息信息
-    @exception_decorator
     def query_context_mes(self):
         """查询可疑信息相关信息"""
         svc = DatabaseManager('saleMes')  # 优惠卷数据库
@@ -300,3 +290,12 @@ class HandleCmd:
         # 发送可疑信息相关信息信息
         time.sleep(0.5)  # 保证顺序
         Message(self.cfg).send_context_message(later[0], [self.qq], [self.launcher_type], self.param[0], later[1])
+
+    # 清理数据库
+    def clear_database(self):
+        """清理数据库"""
+        report = clear_task(self.cfg.discount_message_save_day, self.cfg.all_message_save_day, self.cfg.clear_time,
+                            self.cfg.clear_report, self.qq, False)
+
+        if not self.cfg.clear_report:
+            self.ret_msg = report

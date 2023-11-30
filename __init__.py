@@ -9,6 +9,7 @@ from . import config
 sys.path.append('plugins/discountAssistant')  # 添加模块搜索路径
 
 
+# 检查文本向量化模型是否存在
 def check_model() -> bool:
     """
     检测模型是否完整
@@ -20,6 +21,7 @@ def check_model() -> bool:
         return False
 
 
+# 下载文本向量化模型
 def download_model():
     """
     下载模型
@@ -38,6 +40,7 @@ def download_model():
                 f.write(chunk)
 
 
+# 检查配置文件
 def check_config():
     """
     检查配置文件是否完整
@@ -81,6 +84,26 @@ def check_config():
     elif not isinstance(cfg.prevent_listen_qq_msg, bool):
         raise ValueError('prevent_listen_qq_msg配置项值不正确')
 
+    if not hasattr(cfg, 'discount_message_save_day'):
+        raise ValueError('没有discount_message_save_day配置项')
+    elif not isinstance(cfg.discount_message_save_day, int):
+        raise ValueError('discount_message_save_day配置项值不正确')
+
+    if not hasattr(cfg, 'all_message_save_day'):
+        raise ValueError('没有all_message_save_day配置项')
+    elif not isinstance(cfg.all_message_save_day, int):
+        raise ValueError('all_message_save_day配置项值不正确')
+
+    if not hasattr(cfg, 'clear_time'):
+        raise ValueError('没有clear_time配置项')
+    elif not isinstance(cfg.clear_time, int) or cfg.clear_time < 0 or cfg.clear_time > 23:
+        raise ValueError('effect_message_time配置项值不正确')
+
+    if not hasattr(cfg, 'clear_report'):
+        raise ValueError('clear_report')
+    elif not isinstance(cfg.clear_report, bool):
+        raise ValueError('clear_report配置项值不正确')
+
 
 def main():
     if not check_model():
@@ -96,8 +119,10 @@ def main():
         logging.info('文本相似度模型已存在')
 
     check_config()  # 检查配置项
+    # 检查数据库
     from utils.database import DatabaseManager
     DatabaseManager().init_database()  # 初始化数据库
+    # 执行数据库维护工作
 
 
 main()
