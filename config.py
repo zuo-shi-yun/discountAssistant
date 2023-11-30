@@ -15,8 +15,8 @@ class Config:
     discount_message_save_day = 3
 
     # 监听群的全部备份消息保存天数,默认1天
-    # tips:平均每一个群每天产生300条信息,若该值过大可能导致数据库查询变慢
-    all_message_save_day = 1
+    # tips:平均每一个群每天产生200条信息,若该值过大可能导致数据库查询变慢
+    all_message_save_day = 3
 
     # 自动清理数据库的时间,默认为凌晨3点
     # tips:一般这时不会有群发送消息,清理数据库不用担心冲突

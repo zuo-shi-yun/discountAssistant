@@ -9,7 +9,7 @@ from pkg.plugin.host import PluginHost
 from utils.clear import clear_task
 from utils.database import DatabaseManager
 from utils.md.data_source import md_to_pic
-from utils.message import Message
+from utils.message import Message, HandleMessage
 
 
 class HandleCmd:
@@ -75,7 +75,7 @@ class HandleCmd:
     @exception_decorator
     def help(self):
         """帮助"""
-        md_image = md_to_pic(md_path=r'plugins\discountAssistant\README.md', width=1050)
+        md_image = md_to_pic(md_path=r'plugins\discountAssistant\HELP.md', width=1050)
         b64_img = base64.b64encode(md_image).decode()
         self.ret_msg = Image(base64=b64_img, width=1050, height=5000)
 
@@ -180,12 +180,16 @@ class HandleCmd:
                 mes.append(f"信息:{i['mes']}\n时间:{i['time']}\nID:{i['id']}")
                 image_url.append(i['image_url'] or '')
 
+        send_mes = ['']  # 已经发送了的优惠券
         # 发送信息
         if len(mes):
             for i in range(len(mes)):
-                mes_chain = Message(self.cfg).get_mes_chain(mes[i], image_url[i])  # 信息链
+                if not HandleMessage({}).is_repeat_message(send_mes, mes[i], r"plugins/discountAssistant/model", None,
+                                                           None, handle_repeat=False):
+                    mes_chain = Message(self.cfg).get_mes_chain(mes[i], image_url[i])  # 信息链
 
-                Message(self.cfg).send_message([self.qq], [self.launcher_type], mes_chain)  # 发送信息
+                    Message(self.cfg).send_message([self.qq], [self.launcher_type], mes_chain)  # 发送信息
+                    send_mes.append(mes[i])
         else:
             self.ret_msg = f'没有找到对应{self.param[0]}的信息'
 
