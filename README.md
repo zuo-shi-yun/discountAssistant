@@ -60,7 +60,8 @@
 
 - 运行`!plugin get https://github.com/zuo-shi-yun/discountAssistant`
 
-    - 因本插件需下载模型，该过程大约1分钟，请耐心等待
+    - 因本插件需下载模型，故安装可能较慢，该过程**大约1分钟**，请耐心等待
+    - 如果**超过两分钟**系统没有响应，**重新启动**QChatGPT即可触发模型下载,完成安装
     - 若无法安装/安装时间过长，请前往该[地址](https://huggingface.co/shibing624/text2vec-base-chinese/tree/main)
       手动下载pytorch_model.bin文件并放入plugins/discountAssistant/model目录下
 - 进入插件目录执行pip install -r requirements.txt
