@@ -294,8 +294,8 @@ class HandleCmd:
     # 清理数据库
     def clear_database(self):
         """清理数据库"""
-        report = clear_task(self.cfg.discount_message_save_day, self.cfg.all_message_save_day, self.cfg.clear_time,
-                            self.cfg.clear_report, self.qq, False)
-
-        if not self.cfg.clear_report:
-            self.ret_msg = report
+        if len(self.param):  # 自定义时间范围
+            clear_task(int(self.param[0]), int(self.param[1]), self.cfg.clear_time, True, self.qq, False)
+        else:  # 使用默认时间范围
+            clear_task(self.cfg.discount_message_save_day, self.cfg.all_message_save_day, self.cfg.clear_time,
+                       True, self.qq, False)
