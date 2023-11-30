@@ -9,7 +9,7 @@ from pkg.plugin.host import PluginHost
 from utils.clear import clear_task
 from utils.database import DatabaseManager
 from utils.md.data_source import md_to_pic
-from utils.message import Message, HandleMessage
+from utils.message import Message
 
 
 class HandleCmd:
@@ -180,17 +180,12 @@ class HandleCmd:
                 mes.append(f"信息:{i['mes']}\n时间:{i['time']}\nID:{i['id']}")
                 image_url.append(i['image_url'] or '')
 
-        send_mes = ['']  # 已经发送了的优惠券
         # 发送信息
         if len(mes):
             for i in range(len(mes)):
-                if not HandleMessage(self.cfg).is_repeat_message(send_mes, mes[i], r"plugins/discountAssistant/model",
-                                                                 None,
-                                                                 None, handle_repeat=False):
-                    mes_chain = Message(self.cfg).get_mes_chain(mes[i], image_url[i])  # 信息链
+                mes_chain = Message(self.cfg).get_mes_chain(mes[i], image_url[i])  # 信息链
 
-                    Message(self.cfg).send_message([self.qq], [self.launcher_type], mes_chain)  # 发送信息
-                    send_mes.append(mes[i])
+                Message(self.cfg).send_message([self.qq], [self.launcher_type], mes_chain)  # 发送信息
         else:
             self.ret_msg = f'没有找到对应{self.param[0]}的信息'
 
