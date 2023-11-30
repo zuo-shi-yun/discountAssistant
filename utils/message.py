@@ -26,6 +26,8 @@ class HandleMessage:
         self.qq = kwargs.get('launcher_id')  # 发起者id,用户qq号或群qq号
         self.sender_id = kwargs.get('sender_id')  # 发送者id
         self.launcher_type = kwargs.get('launcher_type')  # 消息类型
+        self.mes_plain = '\n'.join([i.text for i in self.mes_chain[Plain]])  # 文字信息
+        self.image = '\n'.join([i.url for i in self.mes_chain[Image]])  # 图片url
 
         self.had_handle_msg = self.handle()  # 处理流程
 
@@ -40,18 +42,17 @@ class HandleMessage:
         if not len(self.mes_chain[Plain]):  # 空信息返回不做后续处理
             return True
 
-        Message.back_up_msg(self.mes_chain, self.qq)  # 备份信息
+        Message.back_up_msg(self.mes_plain, self.image, self.qq)  # 备份信息
         # 判断是否是连续信息后续信息
         svc_group_control = DatabaseManager('groupMesControl')
         is_continuous_mes = svc_group_control.query(['is_continuous_mes'], {'QQ': self.qq})[0]  # 是否是连续信息的后续信息
         # 优惠券相关信息
-        mes_plain = self.mes_chain[Plain][0].text  # 文字信息
-        introduce, code = self.get_mes_info(mes_plain)  # 优惠券介绍,代码
+        introduce, code = self.get_mes_info(self.mes_plain)  # 优惠券介绍,代码
 
         # 当是非连续消息并且是连续消息的非后续消息时进入
-        if not (is_continuous_mes and self.handle_continuous_late_message(mes_plain, svc_group_control, introduce,
+        if not (is_continuous_mes and self.handle_continuous_late_message(self.mes_plain, svc_group_control, introduce,
                                                                           code)):
-            has_keyword, keywords, send_qq, qq_type = self.get_keyword_qq(mes_plain)  # 需要发送优惠券的qq相关信息
+            has_keyword, keywords, send_qq, qq_type = self.get_keyword_qq(self.mes_plain)  # 需要发送优惠券的qq相关信息
             last_mes_no = svc_group_control.query(['context_num'], {'qq': self.qq})[0]  # 判断是否是可疑信息后续
             if has_keyword:  # 信息含有有关键字
                 with sale_mes_lock:  # 加锁
@@ -65,7 +66,7 @@ class HandleMessage:
                             return True
                         # 获得介绍
                         need_get_more_message = True
-                        introduce = mes_plain
+                        introduce = self.mes_plain
 
                     today_all_mes = DatabaseManager().get_today_all_message() or ['']  # 当天的全部筛选到的优惠卷消息
                     # 判断是否是重复消息、多步骤消息的重复消息
@@ -83,7 +84,7 @@ class HandleMessage:
                                     {'is_continuous_mes': 1, 'send_qq': ' '.join([str(i) for i in send_qq]),
                                      'last_no': last_no + 1}, {'qq': self.qq})
                         # 普通消息处理流程
-                        self.handle_normal_message(code, keywords, introduce, mes_plain, send_qq, svc_message,
+                        self.handle_normal_message(code, keywords, introduce, self.mes_plain, send_qq, svc_message,
                                                    qq_type, need_get_more_message, svc_group_control)
             elif last_mes_no:  # 是可疑信息后续信息
                 mes_time = svc_group_control.query(['last_time'], {'qq': self.qq})[0]
@@ -94,10 +95,10 @@ class HandleMessage:
                 if self.is_time_limit_exceeded(self.cfg.max_relate_message_time,
                                                mes_time) or last_mes_no == 1:  # 最后一条消息或已超时
                     all_mes = src_mes.split('$')  # 获得可疑消息相关信息文本
-                    all_mes.append(mes_plain)  # 可疑信息相关信息文本
+                    all_mes.append(self.mes_plain)  # 可疑信息相关信息文本
 
-                    all_url = src_url.split()
-                    all_url.append(self.mes_chain[Image][0].url if len(self.mes_chain[Image]) else '')  # 可疑信息图片
+                    all_url = src_url.split('$')
+                    all_url.append(self.image)  # 可疑信息图片
 
                     # qq号及类型
                     send_qq = [int(i) for i in svc_group_control.query(['context_qq'], {'qq': self.qq})[0].split()]
@@ -111,11 +112,11 @@ class HandleMessage:
                                               'mes_image_url': '', 'context_qq': '', 'qq_type': '', 'mes_id': ''},
                                              {'qq': self.qq})
                 else:  # 处理可疑信息相关信息
-                    new_line = '\n$'  # 拼接分隔符
-                    svc_group_control.update({'last_mes': f"""{src_mes + new_line if src_mes else ''}{mes_plain}""",
-                                              'mes_image_url': f'{src_url}\n{self.mes_chain[Image][0].url}' if len(
-                                                  self.mes_chain[Image]) else '',
-                                              'context_num': last_mes_no - 1}, {'qq': self.qq})
+                    new_line = '\n$\n'  # 拼接分隔符
+                    svc_group_control.update(
+                        {'last_mes': f"{src_mes or ''}{new_line}{self.mes_plain}",
+                         'mes_image_url': f"{src_url or ''}{new_line}{self.image}",
+                         'context_num': last_mes_no - 1}, {'qq': self.qq})
         return True
 
     # 获得优惠券的介绍和代码
@@ -164,9 +165,8 @@ class HandleMessage:
                         update_data = {'code': src_code + '\n' + code,
                                        'src_mes': src_src + '\n' + mes,
                                        'mes': src_introduce + '\n' + introduce}  # 更新内容
-                        if len(self.mes_chain[Image]):
-                            image_url = row['image_url'] + '\n' + self.mes_chain[Image][0].url
-                            update_data.update({'image_url': image_url})
+                        image_url = row['image_url'] + '\n' + self.image
+                        update_data.update({'image_url': image_url})
                         svc_message.update(update_data, {'id': row['id']})  # 更新优惠卷数据库
 
                         # 发送QQ消息
@@ -179,15 +179,9 @@ class HandleMessage:
                             qq_type.append(temp_type)
 
                         text = f"""信息:{introduce}\n代码:{code}"""
-                        mes_chain = [Plain(text)]
-                        if len(self.mes_chain[Image]):
-                            mes_chain.append(Image(url=self.mes_chain[Image][0].url))
 
-                        for i in range(len(send_qq)):
-                            if qq_type[i] == 1:  # 群消息
-                                self.host.send_group_message(send_qq[i], mes_chain)
-                            else:  # 个人信息
-                                self.host.send_person_message(send_qq[i], mes_chain)
+                        mes_chain = Message.get_mes_chain(text, self.image)  # 信息链
+                        Message(self.cfg).send_message(send_qq, qq_type, mes_chain)  # 发送信息
 
                         return True  # 是多步骤信息后续信息
             else:
@@ -318,7 +312,7 @@ class HandleMessage:
         # 优惠券数据
         insert_data = {'receive_qq': self.qq, 'mes': introduce, 'keyword': ' '.join(keywords),
                        'time': mes_time, 'code': code, 'src_mes': mes, 'send_qq': ' '.join([str(i) for i in send_qq]),
-                       'image_url': self.mes_chain[Image][0].url if len(self.mes_chain[Image]) else ''}
+                       'image_url': self.image}
         svc_message.insert(insert_data)  # 更新数据库
         mes_id = svc_message.query(['id'], {'src_mes': mes})[0]  # 优惠券id
 
@@ -332,9 +326,6 @@ class HandleMessage:
 
         # 构建信息链
         for i in range(len(send_qq)):
-            text = f"""关键字:{keywords[i]}\n消息:{introduce}\n代码:{code}\nID:{mes_id}"""
-            mes_chain = [Plain(text)]
-
             # 发送可疑信息附近信息
             if need_get_more_message:
                 Message(self.cfg).send_context_message(more_mes, [send_qq[i]], [qq_type[i]], mes_id, image_url,
@@ -346,13 +337,10 @@ class HandleMessage:
                     {'qq': self.qq})
             time.sleep(0.5)  # 保证顺序
             # 发送普通QQ消息
-            if len(self.mes_chain[Image]):
-                mes_chain.append(Image(url=self.mes_chain[Image][0].url))
+            text = f"""关键字:{keywords[i]}\n消息:{introduce}\n代码:{code}\nID:{mes_id}"""
 
-            if qq_type[i] == 1:
-                self.host.send_group_message(group=send_qq[i], message=mes_chain)
-            elif qq_type[i] == 0:
-                self.host.send_person_message(person=send_qq[i], message=mes_chain)
+            mes_chain = Message.get_mes_chain(text, self.image)  # 得到信息链
+            Message(self.cfg).send_message(send_qq[i], qq_type[i], mes_chain)  # 发送信息
 
     # 判断是否是可疑信息
     def get_more_message(self, mes: str, svc_context) -> Tuple[List, List[str]]:
@@ -394,21 +382,20 @@ class Message:
 
     # 备份信息
     @staticmethod
-    def back_up_msg(mes_chain, qq):
+    def back_up_msg(mes_plain, image, qq):
         """
         备份当前信息
         :return:
         """
-        mes = mes_chain[Plain][0].text if len(mes_chain[Plain]) else ''  # 文本信息
-        image = mes_chain[Image][0].url if len(mes_chain[Image]) else ''  # 图片url
         local_time = time.localtime(time.time())
         mes_time = time.strftime("%m-%d %H:%M", local_time)  # 时间
         # 备份
         svc_all_msg = DatabaseManager('allMes')
-        svc_all_msg.insert({'mes': mes, 'time': mes_time, 'image_url': image, 'receive_qq': qq})
+        svc_all_msg.insert({'mes': mes_plain, 'time': mes_time, 'image_url': image, 'receive_qq': qq})
 
     # 发送可疑信息相关信息
-    def send_context_message(self, mes: List, qq: list, qq_type: list, mes_id: str, image_url: list,
+    def send_context_message(self, mes: List[str], qq: list, qq_type: list, mes_id: str,
+                             image_url: List[str],
                              reverse=False) -> bool:
         """发送可疑信息相关信息"""
         direction = '下' if not reverse else '上'
@@ -420,18 +407,10 @@ class Message:
         # 构建信息链
         for i in range(len(mes)):
             if i:
-                mes_chain.append('------------------------------------------------------------------\n')
-            text = f"""{mes[i]}\n"""
-
-            mes_chain.append(Plain(text))
-            if i < len(image_url) and 'http' in image_url[i]:
-                mes_chain.append(Image(url=image_url[i]))
+                mes_chain.append(Plain('------------------------------------------------------------------\n'))
+            mes_chain.extend(Message.get_mes_chain(mes[i], image_url[i]))  # 构建信息链
         # 发送信息
-        for i in range(len(qq)):
-            if qq_type[i] == 1:
-                self.host.send_group_message(qq[i], mes_chain)
-            elif qq_type[i] == 0:
-                self.host.send_person_message(qq[i], mes_chain)
+        self.send_message(qq, qq_type, mes_chain)
 
         return True
 
@@ -459,13 +438,33 @@ class Message:
 
     # 得到信息链
     @staticmethod
-    def get_mes_chain(plain_text: List[str], image_url: List[str], divide: str = '') -> List:
-        """得到信息链"""
-        ret = []
-        for i in range(len(plain_text)):
-            ret.append(Plain(plain_text[i]))
-            if 'http' in image_url[i]:
-                ret.append(Image(url=image_url[i]))
+    def get_mes_chain(plain_text: str, image_url: str, divide: str = '') -> List:
+        """得到一条信息的的信息链"""
+        # 分隔图片url
+        image_url = image_url or ''
+        image_url = image_url.split()
+        # 构建信息链
+        ret = [Plain(plain_text or '')]
+        for i in image_url:  # 图片
+            if isinstance(i, str) and 'http' in i:  # 是有效url
+                ret.append(Image(url=i))
 
-            ret.append(divide)
+        ret.append(Plain(divide))
         return ret
+
+    # 根据QQ类型发送信息
+    def send_message(self, qq: List[int], qq_type: List[int], mes_chain):
+        """根据QQ类型发送信息"""
+        # 避免误传
+        if not isinstance(qq, list):
+            qq = [qq]
+        if not isinstance(qq_type, list):
+            qq_type = [qq_type]
+
+        for i in range(len(qq)):  # 遍历qq号
+            if qq_type[i] == 0 or qq_type[i] == '0':  # 个人信息
+                self.host.send_person_message(qq[i], mes_chain)
+            elif qq_type[i] == 1 or qq_type[i] == '1':  # 群信息
+                self.host.send_group_message(qq[i], mes_chain)
+            else:  # 报错
+                logging.warning(f'无法识别的qq类型:{qq_type[i]}:{qq[i]}')

@@ -3,7 +3,7 @@ import base64
 import re
 import time
 
-from mirai import Plain, Image
+from mirai import Image
 from pkg.plugin.host import PluginHost
 
 from utils.database import DatabaseManager
@@ -155,16 +155,9 @@ class HandleCmd:
 
         for msg in msgs:
             text = f"关键字:{self.param[0]}\n信息:{msg['mes']}\n时间:{msg['time']}\n代码:{msg['code']}\nID:{msg['id']}"
-            mes_chain = [Plain(text)]  # 消息链
-            if len(msg['image_url']):  # 图片
-                image_urls = msg['image_url'].split()
-                for url in image_urls:
-                    mes_chain.append(Image(url=url))
+            mes_chain = Message.get_mes_chain(text, msg['image_url'])  # 信息链
             # 发送信息
-            if self.launcher_type == 0:
-                self.host.send_person_message(self.qq, mes_chain)
-            else:
-                self.host.send_group_message(self.qq, mes_chain)
+            Message(self.cfg).send_message([self.qq], [self.launcher_type], mes_chain)
 
         self.ret_msg = '' if len(msgs) else f'没有找到对应{self.param[0]}的优惠券,请确保关键字已添加,或过一段时间再来!'
 
@@ -181,18 +174,14 @@ class HandleCmd:
         for i in all_mes:
             if re.search(self.param[0], i['mes'], re.IGNORECASE | re.S):  # 符合正则
                 mes.append(f"信息:{i['mes']}\n时间:{i['time']}\nID:{i['id']}")
-                image_url.append(i['image_url'])
+                image_url.append(i['image_url'] or '')
 
         # 发送信息
         if len(mes):
-            for i in range(0, len(mes), 3):  # 三条信息一组
-                mes_chain = Message.get_mes_chain(mes[i:i + 3], image_url[i:i + 3],
-                                                  '------------------------------------------------------------------\n'
-                                                  )
-                if self.launcher_type == 0:
-                    self.host.send_person_message(self.qq, mes_chain)
-                else:
-                    self.host.send_group_message(self.qq, mes_chain)
+            for i in range(len(mes)):
+                mes_chain = Message(self.cfg).get_mes_chain(mes[i], image_url[i])  # 信息链
+
+                Message(self.cfg).send_message([self.qq], [self.launcher_type], mes_chain)  # 发送信息
         else:
             self.ret_msg = f'没有找到对应{self.param[0]}的信息'
 
@@ -280,17 +269,10 @@ class HandleCmd:
         find_src_mes = False
         for i in mes:  # 实际上最多执行一次
             text = f'{i["src_mes"]}'
-            mes_chain = [Plain(text)]
-            if len(i['image_url']):
-                image_urls = i['image_url'].split()
-                for url in image_urls:
-                    mes_chain.append(Image(url=url))
+            mes_chain = Message.get_mes_chain(text, i['image_url'])  # 信息链
             find_src_mes = True  # 找到了原信息
             # 发送信息
-            if self.launcher_type == 0:
-                self.host.send_person_message(self.qq, mes_chain)
-            else:
-                self.host.send_group_message(self.qq, mes_chain)
+            Message(self.cfg).send_message([self.qq], [self.launcher_type], mes_chain)
 
         if not find_src_mes:
             self.ret_msg = f'没有找到对应{self.param[0]}的优惠券,请确保ID输入正确!'
@@ -309,15 +291,12 @@ class HandleCmd:
         later[0].reverse()
         later[1].reverse()
         # 发送原信息
-        mes_chain = Message.get_mes_chain([src_mes], [image_url])
+        mes_chain = Message.get_mes_chain(src_mes, image_url)
         # 发送可疑信息相关信息
         Message(self.cfg).send_context_message(forward[0], [self.qq], [self.launcher_type], self.param[0], forward[1],
                                                reverse=True)
         time.sleep(0.5)  # 保证顺序
-        if self.launcher_type == 0:
-            self.host.send_person_message(self.qq, mes_chain)
-        else:
-            self.host.send_group_message(self.qq, mes_chain)
+        Message(self.cfg).send_message([self.qq], [self.launcher_type], mes_chain)
         # 发送上下文信息
         time.sleep(0.5)  # 保证顺序
         Message(self.cfg).send_context_message(later[0], [self.qq], [self.launcher_type], self.param[0], later[1])

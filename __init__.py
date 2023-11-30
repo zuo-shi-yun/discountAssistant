@@ -85,7 +85,7 @@ def check_config():
 def main():
     if not check_model():
         try:
-            logging.critical('模型下载中...\n该过程约1分钟,请耐心等待')
+            logging.critical('模型下载中...该过程约1分钟,请耐心等待')
             download_model()
             logging.critical('模型下载成功!')
         except Exception as e:
