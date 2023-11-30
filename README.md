@@ -55,6 +55,8 @@
 - 可根据配置自动清理数据库，保证系统运行速度
 
 </details>
+
+</details>
 <summary>
 
 ## :crossed_swords:安装与配置
@@ -79,9 +81,7 @@
 - 可对插件运行逻辑、数据库清理、优惠券信息处理流程进行配置
 
 </details>
-</details>
 
-<details>
 <summary>
 
 ## :calling:交互指令
