@@ -1,5 +1,8 @@
 ![discountAssistant](https://socialify.git.ci/zuo-shi-yun/discountAssistant/image?description=1&logo=https%3A%2F%2Fi.postimg.cc%2FDy2Qft7h%2F20.png&name=1&theme=Light)
-
+加了淘宝京东的羊毛群但是懒得天天看？<br/>
+错过了神车而懊恼不已？<br/>
+想淘一点不急着用的便宜东西？<br/>
+优惠卷小助手帮你解决上面这些问题！
 <details>
 <summary> 
 
