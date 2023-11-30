@@ -1,6 +1,7 @@
 """
 处理数据库操作。实现数据库CRUD逻辑
 """
+import logging
 import re
 import sqlite3
 from datetime import datetime
@@ -158,6 +159,8 @@ class DatabaseManager:
             `image_url` text
         )
         """)
+
+        logging.info('数据库初始化成功')
 
     def close(self):
         self.conn.close()
