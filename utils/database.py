@@ -160,7 +160,7 @@ class DatabaseManager:
         )
         """)
 
-        logging.info('数据库初始化成功')
+        logging.debug('数据库检测完毕')
 
     def close(self):
         self.conn.close()

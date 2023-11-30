@@ -16,7 +16,7 @@ class Clear:
     """清理类.负责存储信息"""
 
     def __init__(self, discount_message_save_day: int, all_message_save_day: int, clear_time: int, clear_report: bool):
-        self.admin_qq = getattr(dir(context.get_config()), 'admin_qq')  # 管理员qq
+        self.admin_qq = getattr(context.get_config(), 'admin_qq')  # 管理员qq
         start(discount_message_save_day, all_message_save_day, clear_time, clear_report, self.admin_qq)
 
 

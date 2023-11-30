@@ -104,6 +104,8 @@ def check_config():
     elif not isinstance(cfg.clear_report, bool):
         raise ValueError('clear_report配置项值不正确')
 
+    logging.debug('配置项检测完毕')
+
     return cfg
 
 
