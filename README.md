@@ -57,6 +57,8 @@
 </details>
 
 </details>
+
+<details>
 <summary>
 
 ## :crossed_swords:安装与配置
@@ -82,6 +84,9 @@
 
 </details>
 
+</details>
+
+<details>
 <summary>
 
 ## :calling:交互指令
