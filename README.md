@@ -1,4 +1,4 @@
-![discountAssistant](https://socialify.git.ci/zuo-shi-yun/discountAssistant/image?logo=https%3A%2F%2Fi.postimg.cc%2FDy2Qft7h%2F20.png&name=1&theme=Light)
+![discountAssistant](https://socialify.git.ci/zuo-shi-yun/discountAssistant/image?description=1&logo=https%3A%2F%2Fi.postimg.cc%2FDy2Qft7h%2F20.png&name=1&theme=Light)
 
 <details>
 <summary> 
