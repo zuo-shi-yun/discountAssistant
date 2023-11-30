@@ -184,8 +184,9 @@ class HandleCmd:
         # 发送信息
         if len(mes):
             for i in range(len(mes)):
-                if not HandleMessage({}).is_repeat_message(send_mes, mes[i], r"plugins/discountAssistant/model", None,
-                                                           None, handle_repeat=False):
+                if not HandleMessage(self.cfg).is_repeat_message(send_mes, mes[i], r"plugins/discountAssistant/model",
+                                                                 None,
+                                                                 None, handle_repeat=False):
                     mes_chain = Message(self.cfg).get_mes_chain(mes[i], image_url[i])  # 信息链
 
                     Message(self.cfg).send_message([self.qq], [self.launcher_type], mes_chain)  # 发送信息
