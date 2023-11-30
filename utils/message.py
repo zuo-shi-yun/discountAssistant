@@ -26,8 +26,8 @@ class HandleMessage:
         self.qq = kwargs.get('launcher_id', None)  # 发起者id,用户qq号或群qq号
         self.sender_id = kwargs.get('sender_id', None)  # 发送者id
         self.launcher_type = kwargs.get('launcher_type', None)  # 消息类型
-        self.mes_plain = '\n'.join([i.text for i in self.mes_chain[Plain] if self.mes_chain or []])  # 文字信息
-        self.image = '\n'.join([i.url for i in self.mes_chain[Image] if self.mes_plain or []])  # 图片url
+        self.mes_plain = '\n'.join([i.text for i in (self.mes_chain[Plain] if self.mes_chain else [])])  # 文字信息
+        self.image = '\n'.join([i.url for i in (self.mes_chain[Image] if self.mes_plain else [])])  # 图片url
 
         self.had_handle_msg = self.handle()  # 处理流程
 
