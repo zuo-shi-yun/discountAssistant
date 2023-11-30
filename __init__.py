@@ -104,6 +104,8 @@ def check_config():
     elif not isinstance(cfg.clear_report, bool):
         raise ValueError('clear_report配置项值不正确')
 
+    return cfg
+
 
 def main():
     if not check_model():
@@ -118,11 +120,14 @@ def main():
     else:
         logging.info('文本相似度模型已存在')
 
-    check_config()  # 检查配置项
+    cfg = check_config()  # 检查配置项
     # 检查数据库
     from utils.database import DatabaseManager
     DatabaseManager().init_database()  # 初始化数据库
+
     # 执行数据库维护工作
+    from utils.clear import Clear
+    Clear(cfg.discount_message_save_day, cfg.all_message_save_day, cfg.clear_time, cfg.clear_report)
 
 
 main()
