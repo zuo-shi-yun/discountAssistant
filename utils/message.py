@@ -22,12 +22,12 @@ class HandleMessage:
         self.host = PluginHost()
         self.cfg = config
 
-        self.mes_chain = kwargs.get('message_chain')  # 消息链
-        self.qq = kwargs.get('launcher_id')  # 发起者id,用户qq号或群qq号
-        self.sender_id = kwargs.get('sender_id')  # 发送者id
-        self.launcher_type = kwargs.get('launcher_type')  # 消息类型
-        self.mes_plain = '\n'.join([i.text for i in self.mes_chain[Plain]])  # 文字信息
-        self.image = '\n'.join([i.url for i in self.mes_chain[Image]])  # 图片url
+        self.mes_chain = kwargs.get('message_chain', None)  # 消息链
+        self.qq = kwargs.get('launcher_id', None)  # 发起者id,用户qq号或群qq号
+        self.sender_id = kwargs.get('sender_id', None)  # 发送者id
+        self.launcher_type = kwargs.get('launcher_type', None)  # 消息类型
+        self.mes_plain = '\n'.join([i.text for i in self.mes_chain[Plain] if self.mes_chain or []])  # 文字信息
+        self.image = '\n'.join([i.url for i in self.mes_chain[Image] if self.mes_plain or []])  # 图片url
 
         self.had_handle_msg = self.handle()  # 处理流程
 
@@ -259,7 +259,8 @@ class HandleMessage:
             return False
 
     # 是否是重复信息
-    def is_repeat_message(self, today_all_mes: List[str], mes: str, model_path, svc_message, code) -> bool:
+    def is_repeat_message(self, today_all_mes: List[str], mes: str, model_path, svc_message, code,
+                          handle_repeat=True) -> bool:
         """判断是否是重复优惠券"""
         model = SentenceModel(model_path)  # 模型
         # 向量化
@@ -272,7 +273,8 @@ class HandleMessage:
             # 高于设定值判定为重复文本
             if float(re.search(r'tensor\(\[(.*)]\)', str(cosine_scores[i])).group(1)) > self.cfg.similarity:
                 logging.info(f'文本相似度审查未通过,重复文本: {today_all_mes[i]},相似度:{cosine_scores[i]}')
-                self.handle_repeat_message(svc_message, today_all_mes[i], code)  # 处理重复信息流程
+                if handle_repeat:
+                    self.handle_repeat_message(svc_message, today_all_mes[i], code)  # 处理重复信息流程
                 return True
         else:
             logging.debug(f'文本相似度审查通过,文本: {mes}')
