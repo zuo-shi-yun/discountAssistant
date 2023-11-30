@@ -87,13 +87,13 @@ def main():
         try:
             logging.critical('模型下载中...该过程约1分钟,请耐心等待')
             download_model()
-            logging.critical('模型下载成功!')
+            logging.critical('模型下载成功')
         except Exception as e:
             logging.error(
                 '模型下载失败!请尝试重新下载或从readme文件中的下载链接手动下载pytorch_model.bin文件并放入plugins/discountAssistant/model目录下')
             raise e
     else:
-        logging.info('文本相似度模型已存在!')
+        logging.info('文本相似度模型已存在')
 
     check_config()  # 检查配置项
     from utils.database import DatabaseManager

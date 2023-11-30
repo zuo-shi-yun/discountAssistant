@@ -89,8 +89,8 @@ class HandleMessage:
             elif last_mes_no:  # 是可疑信息后续信息
                 mes_time = svc_group_control.query(['last_time'], {'qq': self.qq})[0]
                 # 获得原数据
-                src_mes = svc_group_control.query(['last_mes'], {'qq': self.qq})[0]
-                src_url = svc_group_control.query(['mes_image_url'], {'qq': self.qq})[0]
+                src_mes = svc_group_control.query(['last_mes'], {'qq': self.qq})[0] or ''
+                src_url = svc_group_control.query(['mes_image_url'], {'qq': self.qq})[0] or ''
                 # 在时间内则更新
                 if self.is_time_limit_exceeded(self.cfg.max_relate_message_time,
                                                mes_time) or last_mes_no == 1:  # 最后一条消息或已超时
@@ -106,13 +106,13 @@ class HandleMessage:
                     # 可疑信息id
                     mes_id = svc_group_control.query(['mes_id'], {'qq': self.qq})[0]
                     # 发送信息
-                    Message(self.cfg).send_context_message(all_mes, send_qq, qq_type, mes_id, all_url)
+                    Message(self.cfg).send_context_message(all_mes[1:], send_qq, qq_type, mes_id, all_url[1:])
                     # 恢复数据库
                     svc_group_control.update({'last_mes': '', 'context_num': 0, 'last_time': '',
                                               'mes_image_url': '', 'context_qq': '', 'qq_type': '', 'mes_id': ''},
                                              {'qq': self.qq})
                 else:  # 处理可疑信息相关信息
-                    new_line = '\n$\n'  # 拼接分隔符
+                    new_line = '$'  # 拼接分隔符
                     svc_group_control.update(
                         {'last_mes': f"{src_mes or ''}{new_line}{self.mes_plain}",
                          'mes_image_url': f"{src_url or ''}{new_line}{self.image}",
@@ -321,8 +321,6 @@ class HandleMessage:
         image_url = []
         if need_get_more_message:
             more_mes, image_url = self.get_more_message(mes, svc_context)
-            more_mes.reverse()
-            image_url.reverse()
 
         # 构建信息链
         for i in range(len(send_qq)):
@@ -406,9 +404,9 @@ class Message:
         mes_chain = []
         # 构建信息链
         for i in range(len(mes)):
-            if i:
-                mes_chain.append(Plain('------------------------------------------------------------------\n'))
-            mes_chain.extend(Message.get_mes_chain(mes[i], image_url[i]))  # 构建信息链
+            mes_chain.extend(Message.get_mes_chain(mes[i], image_url[i],
+                                                   divide='\n------------------------------------------------------------------\n'))  # 构建信息链
+        mes_chain.pop()  # 去掉多余的分隔
         # 发送信息
         self.send_message(qq, qq_type, mes_chain)
 

@@ -296,7 +296,7 @@ class HandleCmd:
         Message(self.cfg).send_context_message(forward[0], [self.qq], [self.launcher_type], self.param[0], forward[1],
                                                reverse=True)
         time.sleep(0.5)  # 保证顺序
-        Message(self.cfg).send_message([self.qq], [self.launcher_type], mes_chain)
-        # 发送上下文信息
+        Message(self.cfg).send_message([self.qq], [self.launcher_type], mes_chain)  # 发送原信息
+        # 发送可疑信息相关信息信息
         time.sleep(0.5)  # 保证顺序
         Message(self.cfg).send_context_message(later[0], [self.qq], [self.launcher_type], self.param[0], later[1])
