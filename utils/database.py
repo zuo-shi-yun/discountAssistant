@@ -80,9 +80,12 @@ class DatabaseManager:
         if reverse:
             sql += ' order by id desc'
 
-        rows = self.__execute__(sql,
-                                tuple([v.pattern if isinstance(v, re.Pattern) else v
-                                       for v in query_where.values()]) if query_where else None)
+        if query_where:
+            rows = self.__execute__(sql,
+                                    tuple([v.pattern if isinstance(v, re.Pattern) else v
+                                           for v in query_where.values()]))
+        else:
+            rows = self.__execute__(sql)
 
         res = []
         if len(query_col) == 1 and query_col[0] != '*':  # 只查询一行
