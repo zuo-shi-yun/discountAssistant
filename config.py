@@ -14,7 +14,7 @@ class Config:
     # tips:优惠券的有效期一般最长3天
     discount_message_save_day = 3
 
-    # 监听群的全部备份消息保存天数,默认1天
+    # 监听群的全部备份消息保存天数,默认3天
     # tips:平均每一个群每天产生200条信息,若该值过大可能导致数据库查询变慢
     all_message_save_day = 3
 
