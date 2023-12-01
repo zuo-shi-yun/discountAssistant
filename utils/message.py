@@ -408,7 +408,8 @@ class Message:
         for i in range(len(mes)):
             mes_chain.extend(Message.get_mes_chain(mes[i], image_url[i],
                                                    divide='\n------------------------------------------------------------------\n'))  # 构建信息链
-        mes_chain.pop()  # 去掉多余的分隔
+        if len(mes_chain):
+            mes_chain.pop()  # 去掉多余的分隔
         # 发送信息
         self.send_message(qq, qq_type, mes_chain)
 

@@ -17,11 +17,11 @@ class Clear:
 
     def __init__(self, discount_message_save_day: int, all_message_save_day: int, clear_time: int, clear_report: bool):
         self.admin_qq = getattr(context.get_config(), 'admin_qq')  # 管理员qq
-        start(discount_message_save_day, all_message_save_day, clear_time, clear_report, self.admin_qq)
+        start_timer(discount_message_save_day, all_message_save_day, clear_time, clear_report, self.admin_qq)
 
 
 # 开始定时任务
-def start(discount_message_save_day: int, all_message_save_day: int, clear_time, clear_report, admin_qq):
+def start_timer(discount_message_save_day: int, all_message_save_day: int, clear_time, clear_report, admin_qq):
     """开始定时任务"""
     delay = get_delay(clear_time)  # 延时时长:s
     param = {  # 传递参数
@@ -31,7 +31,9 @@ def start(discount_message_save_day: int, all_message_save_day: int, clear_time,
         'clear_report': clear_report,
         'admin_qq': admin_qq
     }
+
     threading.Timer(delay, clear_task, param).start()  # 启动定时任务
+    # threading.Timer(3, clear_task, param).start()  # 启动定时任务
 
     hours = delay // 3600
     minutes = (delay % 3600) // 60
@@ -80,7 +82,7 @@ def clear_task(discount_message_save_day: int, all_message_save_day: int, clear_
 
     if repeat_task:
         # 再次执行任务
-        start(discount_message_save_day, all_message_save_day, clear_time, clear_report, admin_qq)
+        start_timer(discount_message_save_day, all_message_save_day, clear_time, clear_report, admin_qq)
 
     return report
 
@@ -110,3 +112,8 @@ def delete_message(database, save_day) -> int:
             delete_cnt += 1
 
     return delete_cnt
+
+
+if __name__ == 'main':
+    print('ok')
+    clear_task(3, 3, 3, False, [123])

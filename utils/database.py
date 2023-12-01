@@ -23,6 +23,7 @@ class DatabaseManager:
     def reconnect(self):
         """连接到数据库"""
         self.conn = sqlite3.connect('plugins/discountAssistant/database.db', check_same_thread=False)
+        # self.conn = sqlite3.connect('database.db', check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         self.cursor = self.conn.cursor()
 
@@ -34,25 +35,27 @@ class DatabaseManager:
     def insert(self, insert_data: dict) -> Cursor:
         """插入数据"""
         insert_key = '`' + '` ,`'.join(list(insert_data.keys())) + '`'
-        insert_value = ', '.join((f'"{v}"' if isinstance(v, str) else f'{v}') for v in insert_data.values())
+        # insert_value = ', '.join((f'"{v}"' if isinstance(v, str) else f'{v}') for v in insert_data.values())
+        insert_value = ', '.join(['?' for i in range(len(insert_data))])
         sql = f"insert into {self.database} ({insert_key}) values ({insert_value})"
-        return self.__execute__(sql)
+        return self.__execute__(sql, tuple(insert_data.values()))
 
     def update(self, update_data: dict, where_data: dict) -> Cursor:
         """更新数据"""
-        update_data = [(f'`{k}`="{v}"' if isinstance(v, str) else f'`{k}`={v}') for k, v in update_data.items()]
-        update_data = ' ,'.join(update_data)
-        where_data = [(f'`{k}`="{v}"' if isinstance(v, str) else f'`{k}`={v}') for k, v in where_data.items()]
-        where_data = ' and '.join(where_data)
-        sql = f"update {self.database} set {update_data} where {where_data}"
-        return self.__execute__(sql)
+        # update_data = [(f'`{k}`="{v}"' if isinstance(v, str) else f'`{k}`={v}') for k, v in update_data.items()]
+        update_data_sql = [f'`{k}`=?' for k, v in update_data.items()]
+        update_data_sql = ' ,'.join(update_data_sql)
+        where_data_sql = [f'`{k}`=?' for k, v in where_data.items()]
+        where_data_sql = ' and '.join(where_data_sql)
+        sql = f"update {self.database} set {update_data_sql} where {where_data_sql}"
+        return self.__execute__(sql, tuple(update_data.values()) + tuple(where_data.values()))
 
     def delete(self, where_delete: dict) -> Cursor:
         """删除数据"""
-        where_delete = [(f'`{k}`="{v}"' if isinstance(v, str) else f'`{k}`={v}') for k, v in where_delete.items()]
-        where_delete = ' and '.join(where_delete)
-        sql = f"delete from {self.database} where {where_delete}"
-        return self.__execute__(sql)
+        where_delete_sql = [f'`{k}`=?' for k, v in where_delete.items()]
+        where_delete_sql = ' and '.join(where_delete_sql)
+        sql = f"delete from {self.database} where {where_delete_sql}"
+        return self.__execute__(sql, tuple(where_delete.values()))
 
     def query(self, query_col: List[str], query_where: dict = None, reverse: bool = True) -> list:
         """查询数据.查询条件只实现了and关系"""
@@ -67,17 +70,19 @@ class DatabaseManager:
         # 构建查询条件
         if query_where:
             # 使用正则表达式代表模糊查询,正则的模式代表模糊查询模式
-            query_where = ' and '.join(
-                [f'`{k}` like "{v.pattern}"' if isinstance(v, re.Pattern)
-                 else f'`{k}`="{v}"' if isinstance(v, str) else f'`{k}`={v}'
+            query_where_sql = ' and '.join(
+                [f'`{k}` like ?' if isinstance(v, re.Pattern)
+                 else f'`{k}`=?'
                  for k, v in query_where.items()])
-            sql += f" where {query_where}"
+            sql += f" where {query_where_sql}"
 
         # 逆序
         if reverse:
             sql += ' order by id desc'
 
-        rows = self.__execute__(sql)
+        rows = self.__execute__(sql,
+                                tuple([v.pattern if isinstance(v, re.Pattern) else v
+                                       for v in query_where.values()]) if query_where else None)
 
         res = []
         if len(query_col) == 1 and query_col[0] != '*':  # 只查询一行
