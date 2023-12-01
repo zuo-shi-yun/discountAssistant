@@ -333,9 +333,9 @@ class HandleMessage:
                 # 同步上下文数据库
                 svc_context.update(
                     {'context_qq': ' '.join([str(i) for i in send_qq]), 'qq_type': ' '.join([str(i) for i in qq_type]),
-                     'mes_id': mes_id},
-                    {'qq': self.qq})
-            time.sleep(0.5)  # 保证顺序
+                     'mes_id': mes_id}, {'qq': self.qq})
+
+                time.sleep(1.5)  # 保证顺序
             # 发送普通QQ消息
             text = f"""关键字:{keywords[i]}\n消息:{introduce}\n代码:{code}\nID:{mes_id}"""
 

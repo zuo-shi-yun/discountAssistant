@@ -81,9 +81,8 @@ class DatabaseManager:
             sql += ' order by id desc'
 
         if query_where:
-            rows = self.__execute__(sql,
-                                    tuple([v.pattern if isinstance(v, re.Pattern) else v
-                                           for v in query_where.values()]))
+            rows = self.__execute__(sql, tuple([v.pattern if isinstance(v, re.Pattern) else v
+                                                for v in query_where.values()]))
         else:
             rows = self.__execute__(sql)
 
