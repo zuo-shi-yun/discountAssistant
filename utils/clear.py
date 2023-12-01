@@ -107,7 +107,7 @@ def delete_message(database, save_day) -> int:
         # 计算两个日期之间的差距
         difference = today - date
         # 判断差距是否大于等于指定范围
-        if difference > timedelta(days=save_day - 1):
+        if difference > timedelta(days=int(save_day) - 1):
             svc.delete({'id': row['id']})
             delete_cnt += 1
 
