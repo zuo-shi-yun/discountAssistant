@@ -32,7 +32,7 @@ def start_timer(discount_message_save_day: int, all_message_save_day: int, clear
         'admin_qq': admin_qq
     }
 
-    threading.Timer(delay, clear_task, param).start()  # 启动定时任务
+    threading.Timer(delay, clear_task, **param).start()  # 启动定时任务
     # threading.Timer(3, clear_task, param).start()  # 启动定时任务
 
     hours = delay // 3600
@@ -107,7 +107,7 @@ def delete_message(database, save_day) -> int:
         # 计算两个日期之间的差距
         difference = today - date
         # 判断差距是否大于等于指定范围
-        if difference > timedelta(days=int(save_day) - 1):
+        if difference > timedelta(days=save_day - 1):
             svc.delete({'id': row['id']})
             delete_cnt += 1
 
