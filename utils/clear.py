@@ -32,7 +32,7 @@ def start_timer(discount_message_save_day: int, all_message_save_day: int, clear
         'admin_qq': admin_qq
     }
 
-    threading.Timer(delay, clear_task, **param).start()  # 启动定时任务
+    threading.Timer(delay, clear_task, kwargs=param).start()  # 启动定时任务
     # threading.Timer(3, clear_task, param).start()  # 启动定时任务
 
     hours = delay // 3600
