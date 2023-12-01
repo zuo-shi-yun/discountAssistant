@@ -5,6 +5,7 @@ import time
 
 from mirai import Image
 from pkg.plugin.host import PluginHost
+from pkg.utils import context
 
 from utils.clear import clear_task
 from utils.database import DatabaseManager
@@ -299,16 +300,24 @@ class HandleCmd:
         # 发送可疑信息相关信息
         Message(self.cfg).send_context_message(forward[0], [self.qq], [self.launcher_type], self.param[0], forward[1],
                                                reverse=True)
-        time.sleep(0.5)  # 保证顺序
+        time.sleep(1.5)  # 保证顺序
         Message(self.cfg).send_message([self.qq], [self.launcher_type], mes_chain)  # 发送原信息
         # 发送可疑信息相关信息信息
-        time.sleep(0.5)  # 保证顺序
+        time.sleep(1.5)  # 保证顺序
         Message(self.cfg).send_context_message(later[0], [self.qq], [self.launcher_type], self.param[0], later[1])
 
     # 清理数据库
     @exception_decorator
     def clear_database(self):
         """清理数据库"""
+        admin_qq = getattr(context.get_config(), 'admin_qq')  # 管理员qq
+        if not isinstance(admin_qq, list):
+            admin_qq = [admin_qq]
+
+        if self.qq not in admin_qq:  # 判断是不是管理员
+            self.ret_msg = '该指令仅管理员可用'
+            return
+
         if len(self.param):  # 自定义时间范围
             clear_task(int(self.param[0]), int(self.param[1]), self.cfg.clear_time, True, self.qq, False)
         else:  # 使用默认时间范围
