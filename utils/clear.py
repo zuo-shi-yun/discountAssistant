@@ -7,9 +7,8 @@ from datetime import datetime, timedelta
 
 from mirai import Plain
 from pkg.utils import context
-
-from utils.database import DatabaseManager
-from utils.message import Message
+from plugins.discountAssistant.utils.database import DatabaseManager
+from plugins.discountAssistant.utils.message import Message
 
 
 class Clear:

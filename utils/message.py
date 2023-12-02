@@ -10,9 +10,8 @@ from typing import List, Tuple
 
 from mirai import Plain, Image
 from pkg.plugin.host import PluginHost
+from plugins.discountAssistant.utils.database import DatabaseManager
 from text2vec import SentenceModel, cos_sim
-
-from utils.database import DatabaseManager
 
 sale_mes_lock = threading.Lock()  # 消息锁
 

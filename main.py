@@ -1,14 +1,9 @@
-import os
-import sys
-
 from pkg.plugin.host import EventContext, PluginHost
 from pkg.plugin.models import *
-
-sys.path.append(os.path.join('plugins', 'discountAssistant'))
+from plugins.discountAssistant.utils.cmd import HandleCmd
+from plugins.discountAssistant.utils.message import HandleMessage
 
 from . import config
-from utils.cmd import HandleCmd
-from utils.message import HandleMessage
 
 """
 自动筛选、发送淘宝、京东优惠券
