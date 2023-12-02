@@ -69,7 +69,7 @@
 <details>
 <summary>安装</summary>
 
-- 运行`!plugin get https://github.com/zuo-shi-yun/discountAssistant`
+- 运行`!plugin get https://github.com/zuo-shi-yun/discountAssistant.git`
 
     - 因本插件需下载模型，故安装可能较慢，该过程**大约1分钟**，请耐心等待
     - 如果**超过两分钟**系统没有响应，**重新启动**QChatGPT即可触发模型下载，完成安装
