@@ -1,12 +1,9 @@
 import logging
 import os
-import sys
 
 import requests
 
 from . import config
-
-sys.path.append('plugins/discountAssistant')  # 添加模块搜索路径
 
 
 # 检查文本向量化模型是否存在
@@ -124,11 +121,11 @@ def main():
 
     cfg = check_config()  # 检查配置项
     # 检查数据库
-    from utils.database import DatabaseManager
+    from plugins.discountAssistant.utils.database import DatabaseManager
     DatabaseManager().init_database()  # 初始化数据库
 
     # 执行数据库维护工作
-    from utils.clear import Clear
+    from plugins.discountAssistant.utils.clear import Clear
     Clear(cfg.discount_message_save_day, cfg.all_message_save_day, cfg.clear_time, cfg.clear_report)
 
 

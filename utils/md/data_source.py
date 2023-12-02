@@ -7,8 +7,7 @@ from typing import Union, Literal
 
 import jinja2
 import markdown
-
-from utils.md.browser import get_new_page
+from plugins.discountAssistant.utils.md.browser import get_new_page
 
 TEMPLATES_PATH = str(Path(__file__).parent / "templates")
 

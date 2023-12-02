@@ -6,11 +6,10 @@ import time
 from mirai import Image
 from pkg.plugin.host import PluginHost
 from pkg.utils import context
-
-from utils.clear import clear_task
-from utils.database import DatabaseManager
-from utils.md.data_source import md_to_pic
-from utils.message import Message
+from plugins.discountAssistant.utils.clear import clear_task
+from plugins.discountAssistant.utils.database import DatabaseManager
+from plugins.discountAssistant.utils.md.data_source import md_to_pic
+from plugins.discountAssistant.utils.message import Message
 
 
 class HandleCmd:

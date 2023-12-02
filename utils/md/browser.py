@@ -7,8 +7,7 @@ import logging
 from typing import Optional
 
 from playwright.sync_api import Page, Error, Browser, sync_playwright
-
-from utils.md.Config import Config
+from plugins.discountAssistant.utils.md.Config import Config
 
 
 class ConfigError(Exception):
