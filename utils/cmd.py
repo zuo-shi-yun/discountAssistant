@@ -35,7 +35,7 @@ class HandleCmd:
     def handle(self) -> bool:
         """处理指令"""
         handle_func = {
-            '帮助': self.help,
+            '优惠': self.help,
             '添加群': self.insert_group,
             '添加关键字': self.insert_keyword,
             '查询优惠券': self.query_sale_message,
