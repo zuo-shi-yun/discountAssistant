@@ -25,11 +25,7 @@ def download_model():
     :return:
     """
 
-    url = 'https://cdn-lfs.huggingface.co/shibing624/text2vec-base-chinese' \
-          '/54ff3a857e3efa0b8114eb5e7a9e7e2b6230b4ddb083254a751e44772bb99075?response-content-disposition=attachment' \
-          '%3B+filename*%3DUTF-8%27%27pytorch_model.bin%3B+filename%3D%22pytorch_model.bin%22%3B&response-content' \
-          '-type=application%2Foctet-stream&Expires=1701417569&Policy' \
-          '=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTcwMTQxNzU2OX19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2RuLWxmcy5odWdnaW5nZmFjZS5jby9zaGliaW5nNjI0L3RleHQydmVjLWJhc2UtY2hpbmVzZS81NGZmM2E4NTdlM2VmYTBiODExNGViNWU3YTllN2UyYjYyMzBiNGRkYjA4MzI1NGE3NTFlNDQ3NzJiYjk5MDc1P3Jlc3BvbnNlLWNvbnRlbnQtZGlzcG9zaXRpb249KiZyZXNwb25zZS1jb250ZW50LXR5cGU9KiJ9XX0_&Signature=G9i5ysy0imZJ38pCu1nLIpn87MLunRhJN%7EuUQIVhKQHd22R0f%7EnApRkXflH3mqBVn3CVtQ-YPbk3wehXFj7sU2sTocysI5dj3xjPbJ%7E93s%7EwFRDDstP6NAjqcJAmMquOgskej6hp3GnDcy2q0NmjpBLG6%7EAUyIvycV7iD-gsBbYTIlqa062izZ1nC0JkRWNv4sW7ZP5wGl%7EpIhtHOI9mR96j2y1aYnE0tlfx36uVQ%7Ez43TySdoq0kIrltvmg8Det5AwLkjV1NS55TC-up8RVPa5qv6Za1feILr8aBQDU4NSTtNBiZY3bOyvir62p%7E1qGGrlA754UI5Zqo9wqMsHkWQ__&Key-Pair-Id=KVTP0A1DKRTAX'
+    url = 'https://huggingface.co/shibing624/text2vec-base-chinese/resolve/main/pytorch_model.bin?download=true'
     r = requests.get(url, stream=True)
     with open('plugins/discountAssistant/model/pytorch_model.bin', 'wb') as f:
         for chunk in r.iter_content(chunk_size=1024):
