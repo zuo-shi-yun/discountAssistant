@@ -82,15 +82,15 @@ class HandleCmd:
     # 添加监听群
     @exception_decorator
     def insert_group(self):
-        # 添加群管理数据库
-        svc_group_control = DatabaseManager('groupMesControl')
-        svc_group_control.insert({'qq': self.param[0], 'is_continuous_mes': 0, 'last_no': 0, 'context_num': 0})
         # 添加监听群数据库
         svc_listen_qq = DatabaseManager('listenQQ')
         src_qq_group = svc_listen_qq.query(['listen_qq'])  # 已有监听群
         # 是否已经监听该群
         if int(self.param[0]) not in src_qq_group:  # 没有监听
             svc_listen_qq.insert({'listen_qq': self.param[0]})
+            # 添加群管理数据库
+            svc_group_control = DatabaseManager('groupMesControl')
+            svc_group_control.insert({'qq': self.param[0], 'is_continuous_mes': 0, 'last_no': 0, 'context_num': 0})
             self.ret_msg = f'成功,请确保已请将我邀请进这个QQ群^_^\n本系统目前共在{len(src_qq_group) + 1}个群中搜索,本系统具有基于文本相似度算法的去重功能,不必担心消息重复'
         else:
             self.ret_msg = '我已经监听了这个群,无需重复添加'
@@ -229,9 +229,9 @@ class HandleCmd:
         key_qq = svc_listen_qq.query(['listen_qq'])  # 监听群qq列表
 
         if int(self.param[0]) in key_qq:  # 在监听列表
-            svc_listen_qq.delete({'listen_qq': self.param[0]})  # 删除监听qq
+            svc_listen_qq.delete({'listen_qq': int(self.param[0])})  # 删除监听qq
             svc_group_control = DatabaseManager('groupMesControl')  # 群控制数据库
-            svc_group_control.delete({'qq': self.param[0]})  # 删除控制qq
+            svc_group_control.delete({'qq': int(self.param[0])})  # 删除控制qq
             self.ret_msg = '成功'
         else:
             self.ret_msg = '我本来就没有检测这个群'

@@ -11,7 +11,7 @@ from . import config
 
 
 # 注册插件
-@register(name="discountAssistant", description="自动筛选、发送淘宝、京东优惠券", version="1.0", author="zuoShiYun")
+@register(name="discountAssistant", description="自动筛选、发送淘宝、京东优惠券", version="1.1", author="zuoShiYun")
 class DiscountAssistant(Plugin):
     def __init__(self, plugin_host: PluginHost):
         self.host = plugin_host
