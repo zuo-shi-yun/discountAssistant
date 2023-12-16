@@ -71,9 +71,9 @@
 
 - 运行`!plugin get https://github.com/zuo-shi-yun/discountAssistant.git`
     - 因本插件需下载模型，请耐心等待，如果系统长时间未出现**下载进度条**，请重新启动系统。
-    - 下载该模型需科学上网，如安装时间过长/无法安装，请从该官方
-      [链接](https://huggingface.co/shibing624/text2vec-base-chinese/tree/main)
-      或[网盘链接](https://pan.baidu.com/s/15Y4ptxTKAS8Ia5X7Y7QAaQ?pwd=3r4n)（密码：3r4n）
+    - 下载该模型需科学上网，如安装时间过长/无法安装，请从该
+      [官方链接](https://huggingface.co/shibing624/text2vec-base-chinese/tree/main)
+      或[网盘链接](https://pan.baidu.com/s/15Y4ptxTKAS8Ia5X7Y7QAaQ?pwd=3r4n)(无需科学上网，密码：3r4n)
       下载pytorch_model.bin文件并放入plugins/discountAssistant/model目录下。
 - 进入插件目录执行`pip install -r requirements.txt`
 
