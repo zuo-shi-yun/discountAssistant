@@ -7,6 +7,7 @@ from pkg.plugin.models import *
 from plugins.discountAssistant import config
 from plugins.discountAssistant.utils.cmd import HandleCmd
 from plugins.discountAssistant.utils.message import HandleMessage
+from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 
 """
@@ -93,7 +94,9 @@ def download_model():
     """
 
     url = 'https://huggingface.co/shibing624/text2vec-base-chinese/resolve/main/pytorch_model.bin?download=true'
-    r = requests.get(url, stream=True)
+    session = requests.Session()
+    session.mount('https://', HTTPAdapter(max_retries=2))  # 重试两次
+    r = session.get(url, stream=True)
     mode_path = 'plugins/discountAssistant/model/pytorch_model.bin'
     total_size = int(r.headers.get('content-length'), 0)
     with open(mode_path, 'wb') as f:
