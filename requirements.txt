@@ -9,3 +9,4 @@ pytest-playwright
 pymdown-extensions
 typing
 python-markdown-math
+tqdm~=4.66.1

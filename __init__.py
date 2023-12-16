@@ -1,36 +1,6 @@
 import logging
-import os
-
-import requests
 
 from . import config
-
-
-# 检查文本向量化模型是否存在
-def check_model() -> bool:
-    """
-    检测模型是否完整
-    :return: 完整返回True
-    """
-    if os.path.exists('plugins/discountAssistant/model/pytorch_model.bin'):
-        return True
-    else:
-        return False
-
-
-# 下载文本向量化模型
-def download_model():
-    """
-    下载模型
-    :return:
-    """
-
-    url = 'https://huggingface.co/shibing624/text2vec-base-chinese/resolve/main/pytorch_model.bin?download=true'
-    r = requests.get(url, stream=True)
-    with open('plugins/discountAssistant/model/pytorch_model.bin', 'wb') as f:
-        for chunk in r.iter_content(chunk_size=1024):
-            if chunk:
-                f.write(chunk)
 
 
 # 检查配置文件
@@ -103,18 +73,6 @@ def check_config():
 
 
 def main():
-    if not check_model():
-        try:
-            logging.critical('模型下载中...该过程约1分钟,请耐心等待')
-            download_model()
-            logging.critical('模型下载成功')
-        except Exception as e:
-            logging.error(
-                '模型下载失败!请尝试重新下载或从readme文件中的下载链接手动下载pytorch_model.bin文件并放入plugins/discountAssistant/model目录下')
-            raise e
-    else:
-        logging.info('文本相似度模型已存在')
-
     cfg = check_config()  # 检查配置项
     # 检查数据库
     from plugins.discountAssistant.utils.database import DatabaseManager
