@@ -97,7 +97,7 @@ def download_model():
     mode_path = 'plugins/discountAssistant/model/pytorch_model.bin'
     total_size = int(r.headers.get('content-length'), 0)
     with open(mode_path, 'wb') as f:
-        with tqdm(total=total_size, unit='B', unit_scale=True, desc='Downloading') as pbar:
+        with tqdm(total=total_size, unit='B', unit_scale=True, desc='Downloading', colour='#12a10e') as pbar:
             for chunk in r.iter_content(chunk_size=1024):
                 if chunk:
                     f.write(chunk)
