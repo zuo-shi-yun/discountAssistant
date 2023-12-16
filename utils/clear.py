@@ -113,6 +113,6 @@ def delete_message(database, save_day) -> int:
     return delete_cnt
 
 
-if __name__ == 'main':
+if __name__ == 'check_plugin':
     print('ok')
     clear_task(3, 3, 3, False, [123])
