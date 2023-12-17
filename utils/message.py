@@ -119,8 +119,7 @@ class HandleMessage:
         return True
 
     # 获得优惠券的介绍和代码
-    @staticmethod
-    def get_mes_info(mes):
+    def get_mes_info(self, mes):
         """获得优惠券的介绍和代码"""
         introduce = ''  # 简化后的优惠卷信息
         code = ''  # 优惠券代码
@@ -131,17 +130,15 @@ class HandleMessage:
             introduce = '\n'.join([i for i in introduce if i]).strip()
             code = '\n'.join(re.findall(r'https://u.jd.c.+', mes, re.MULTILINE))
         else:  # 淘宝卷
-            taobao_rule = r'(.*\s*)([￥$][A-Za-z0-9]*[￥$)]/?\s*[A-Z]*\d*)'
-            res = re.search(taobao_rule, mes, re.S)
-            if res:
-                introduce = '\n'.join([s.strip() for s in res.group(1).split('\n')]).strip()
-                code = res.group(2)
-            else:
-                patten = r'(.*)(￥.*￥:// AC66/).*'
-                res = re.search(patten, mes, re.S)
-                if res:
-                    introduce = '\n'.join([s.strip() for s in res.group(1).split('\n')]).strip()
-                    code = res.group(2)
+            mes_lines = mes.split('\n')
+            temp_code = []  # 临时代码
+            for i in mes_lines:
+                if self.get_char_cnt(i) >= self.cfg.suspicious_mes or 'http' in i:  # 符合有效信息标准或有链接则为优惠券代码
+                    temp_code.append(i)
+
+            if len(temp_code) != 0:
+                introduce = '\n'.join(mes_lines[:mes_lines.index(temp_code[0])])
+                code = '\n'.join(temp_code)
 
         return introduce, code
 
@@ -344,9 +341,7 @@ class HandleMessage:
     # 判断是否是可疑信息
     def get_more_message(self, mes: str, svc_context) -> Tuple[List, List[str]]:
         """判断是否是可疑信息"""
-        uppercase_count = sum(1 for char in mes if char.isupper())
-        digit_count = sum(1 for char in mes if char.islower())
-        cnt = uppercase_count + digit_count  # 英文字符数量
+        cnt = self.get_char_cnt(mes)
         if cnt < self.cfg.suspicious_mes and 'http' not in mes:  # 是可疑信息
             logging.info(f'{self.qq}的{mes}被判定为可疑信息')
             svc_all_message = DatabaseManager('allMes')
@@ -370,6 +365,14 @@ class HandleMessage:
             return more_mes, url
         else:
             return [], []
+
+    # 获得英文字符数量
+    @staticmethod
+    def get_char_cnt(mes):
+        uppercase_count = sum(1 for char in mes if char.isupper())
+        lowercase_count = sum(1 for char in mes if char.islower())
+        cnt = uppercase_count + lowercase_count  # 英文字符数量
+        return cnt
 
 
 class Message:
