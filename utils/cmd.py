@@ -1,15 +1,18 @@
 """处理用户指令。实现用户与系统交互逻辑"""
 import base64
+import importlib
 import re
 import time
 
 from mirai import Image
-from pkg.plugin.host import PluginHost
-from pkg.utils import context
 from plugins.discountAssistant.utils.clear import clear_task
 from plugins.discountAssistant.utils.database import DatabaseManager
 from plugins.discountAssistant.utils.md.data_source import md_to_pic
 from plugins.discountAssistant.utils.message import Message
+
+from pkg.plugin.host import PluginHost
+from pkg.plugin.models import require_ver
+from pkg.utils import context
 
 
 class HandleCmd:
@@ -309,7 +312,13 @@ class HandleCmd:
     @exception_decorator
     def clear_database(self):
         """清理数据库"""
-        admin_qq = getattr(context.get_config(), 'admin_qq')  # 管理员qq
+        try:
+            require_ver("v2.5.1", "v2.6.6")  # 不超过2.6.6使用老方法获得admin_qq
+            admin_qq = getattr(context.get_config(), 'admin_qq')  # 管理员qq
+        except:  # 高于该版本使用新方法
+            host_config = importlib.import_module('config-template')
+            admin_qq = host_config.admin_qq
+
         if not isinstance(admin_qq, list):
             admin_qq = [admin_qq]
 
