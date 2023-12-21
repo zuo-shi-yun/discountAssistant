@@ -6,24 +6,16 @@ import threading
 from datetime import datetime, timedelta
 
 from mirai import Plain
+from plugins.discountAssistant.utils.HostConfig import HostConfig
 from plugins.discountAssistant.utils.database import DatabaseManager
 from plugins.discountAssistant.utils.message import Message
-
-from pkg.plugin.models import require_ver
-from pkg.utils import context
 
 
 class Clear:
     """清理类.负责存储信息"""
 
     def __init__(self, discount_message_save_day: int, all_message_save_day: int, clear_time: int, clear_report: bool):
-        try:
-            require_ver("v2.5.1", "v2.6.6")  # 不超过2.6.6使用老方法获得admin_qq
-            self.admin_qq = getattr(context.get_config(), 'admin_qq')  # 管理员qq
-        except:  # 高于该版本使用新方法
-            host_config = context.get_config_manager().data
-            self.admin_qq = host_config['admin_qq']
-
+        self.admin_qq = HostConfig.get('admin_qq')
         start_timer(discount_message_save_day, all_message_save_day, clear_time, clear_report, self.admin_qq)
 
 

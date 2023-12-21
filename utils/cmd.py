@@ -4,14 +4,13 @@ import re
 import time
 
 from mirai import Image
+from plugins.discountAssistant.utils.HostConfig import HostConfig
 from plugins.discountAssistant.utils.clear import clear_task
 from plugins.discountAssistant.utils.database import DatabaseManager
 from plugins.discountAssistant.utils.md.data_source import md_to_pic
 from plugins.discountAssistant.utils.message import Message, HandleMessage
 
 from pkg.plugin.host import PluginHost
-from pkg.plugin.models import require_ver
-from pkg.utils import context
 
 
 class HandleCmd:
@@ -319,13 +318,8 @@ class HandleCmd:
     @exception_decorator
     def clear_database(self):
         """清理数据库"""
-        try:
-            require_ver("v2.5.1", "v2.6.6")  # 不超过2.6.6使用老方法获得admin_qq
-            admin_qq = getattr(context.get_config(), 'admin_qq')  # 管理员qq
-        except:  # 高于该版本使用新方法
-            host_config = context.get_config_manager().data
-            admin_qq = host_config['admin_qq']
-
+        admin_qq = HostConfig.get('admin_qq')  # 管理员QQ
+        
         if not isinstance(admin_qq, list):
             admin_qq = [admin_qq]
 
