@@ -295,7 +295,7 @@ class HandleMessage:
         embeddings1 = torch.Tensor(np.array(embeddings1)).to(torch.float32)
 
         # 是否是重复文本
-        is_repeat_mes, mes, similarity = self.is_repeat_text(np.array(embeddings1), embeddings2, today_all_mes, mes,
+        is_repeat_mes, mes, similarity = self.is_repeat_text(embeddings1, embeddings2, today_all_mes, mes,
                                                              self.cfg.similarity)
 
         if is_repeat_mes:
