@@ -10,7 +10,6 @@ from datetime import datetime
 from typing import List, Tuple
 
 import numpy as np
-import torch
 from mirai import Plain, Image
 from plugins.discountAssistant.utils.database import DatabaseManager
 from text2vec import SentenceModel, cos_sim
@@ -289,10 +288,10 @@ class HandleMessage:
 
         for i in today_all_mes:
             if i['encode']:
-                embeddings1.append(np.array(json.loads(i['encode'])))
+                embeddings1.append(np.array(json.loads(i['encode']), dtype=np.float32))
             else:  # 兼容旧版本
                 embeddings1.append(self.get_msg_encode(i['mes']))
-        embeddings1 = torch.Tensor(np.array(embeddings1)).to(torch.float32)
+        embeddings1 = np.array(embeddings1)
 
         # 是否是重复文本
         is_repeat_mes, mes, similarity = self.is_repeat_text(embeddings1, embeddings2, today_all_mes, mes,
