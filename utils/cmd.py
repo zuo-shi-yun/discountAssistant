@@ -174,8 +174,7 @@ class HandleCmd:
         svc = DatabaseManager('allMes')  # 全部信息数据库
         all_mes = svc.query(['mes', 'time', 'image_url', 'id'])  # 获得全部信息
 
-        image_url = []
-        mes = []
+        have_filter_mes = False
         send_mes = ['']
         send_mes_emd = [HandleMessage.get_msg_encode('')]  # 默认一条空信息
 
@@ -186,18 +185,18 @@ class HandleCmd:
                 is_repeat_mes, _, _ = HandleMessage.is_repeat_text(send_mes_emd, introduce_emd, send_mes, introduce,
                                                                    self.cfg.similarity)
                 if not is_repeat_mes:  # 不是重复信息
-                    mes.append(f"信息:{i['mes']}\n时间:{i['time']}\nID:{i['id']}")
-                    image_url.append(i['image_url'] or '')
+                    # 发送信息
+                    mes = f"信息:{i['mes']}\n时间:{i['time']}\nID:{i['id']}"
+                    image_url = i['image_url'] or ''
+                    mes_chain = Message(self.cfg).get_mes_chain(mes, image_url)  # 信息链
+                    Message(self.cfg).send_message([self.qq], [self.launcher_type], mes_chain)  # 发送信息
+                    # 更改已发送信息列表
                     send_mes.append(introduce)
                     send_mes_emd.append(introduce_emd)
+                    have_filter_mes = True
 
         # 发送信息
-        if len(mes):
-            for i in range(len(mes)):
-                mes_chain = Message(self.cfg).get_mes_chain(mes[i], image_url[i])  # 信息链
-
-                Message(self.cfg).send_message([self.qq], [self.launcher_type], mes_chain)  # 发送信息
-        else:
+        if not have_filter_mes:
             self.ret_msg = f'没有找到对应{self.param[0]}的信息'
 
     # 查询关键字

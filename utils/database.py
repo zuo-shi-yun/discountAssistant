@@ -1,12 +1,15 @@
 """
 处理数据库操作。实现数据库CRUD逻辑
 """
+import io
 import logging
 import re
 import sqlite3
 from datetime import datetime
 from sqlite3 import Cursor
 from typing import List
+
+import numpy as np
 
 
 class DatabaseManager:
@@ -25,6 +28,11 @@ class DatabaseManager:
         self.conn = sqlite3.connect('plugins/discountAssistant/database.db', check_same_thread=False)
         # self.conn = sqlite3.connect('database.db', check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
+        # 当插入数据的时候将array转换为text插入
+        sqlite3.register_adapter(np.ndarray, self.adapt_array)
+
+        # 当查询数据的时候将text转换为array
+        sqlite3.register_converter("array", self.convert_array)
         self.cursor = self.conn.cursor()
 
     def __execute__(self, *args, **kwargs) -> Cursor:
@@ -186,3 +194,16 @@ class DatabaseManager:
         day = datetime.now().day
 
         return self.query(['mes', 'encode'], {'time': re.compile('{:02}-{:02} %:%'.format(month, day))})
+
+    @staticmethod
+    def adapt_array(arr):
+        out = io.BytesIO()
+        np.save(out, arr)
+        out.seek(0)
+        return sqlite3.Binary(out.read())
+
+    @staticmethod
+    def convert_array(text):
+        out = io.BytesIO(text)
+        out.seek(0)
+        return np.load(out)

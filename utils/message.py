@@ -1,6 +1,7 @@
 """
 处理优惠券信息的流程代码。实现筛选优惠券逻辑
 """
+import io
 import logging
 import re
 import threading
@@ -8,6 +9,7 @@ import time
 from datetime import datetime
 from typing import List, Tuple
 
+import numpy as np
 from mirai import Plain, Image
 from plugins.discountAssistant.utils.database import DatabaseManager
 from text2vec import SentenceModel, cos_sim
@@ -286,7 +288,9 @@ class HandleMessage:
 
         for i in today_all_mes:
             if i['encode']:  # 兼容旧版本
-                embeddings1.append(i['encode'])
+                out = io.BytesIO(i['encode'])
+                out.seek(0)
+                embeddings1.append(np.load(out))
             else:
                 embeddings1.append(self.get_msg_encode(i['mes']))
 
