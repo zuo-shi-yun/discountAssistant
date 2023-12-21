@@ -275,7 +275,7 @@ class HandleMessage:
         for i in range(len(cosine_scores)):
             # 高于设定值判定为重复文本
             if float(re.search(r'tensor\(\[(.*)]\)', str(cosine_scores[i])).group(1)) > similarity:
-                return True, all_mes[i], cosine_scores[i]
+                return True, all_mes[i]['mes'], cosine_scores[i]
         else:
             return False, mes, 0
 
