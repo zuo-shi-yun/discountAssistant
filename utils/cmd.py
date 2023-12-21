@@ -177,7 +177,7 @@ class HandleCmd:
         send_mes = ['']
         send_mes_emd = [HandleMessage.get_msg_encode('')]  # 默认一条空信息
         src_process_message_timeout = HostConfig.get('process_message_timeout')
-        HostConfig.put('process_message_timeout', 60 * 60)  # 更改超时时间
+        HostConfig.put('process_message_timeout', f'{60 * 60}')  # 更改超时时间
         for i in all_mes:
             if re.search(self.param[0], i['mes'], re.IGNORECASE | re.S):  # 符合正则
                 introduce, _ = HandleMessage.get_mes_info(i['mes'], self.cfg.suspicious_mes)
@@ -194,7 +194,7 @@ class HandleCmd:
                     send_mes.append(introduce)
                     send_mes_emd.append(introduce_emd)
                     have_filter_mes = True
-        HostConfig.put('process_message_timeout', src_process_message_timeout)
+        HostConfig.put('process_message_timeout', f'{src_process_message_timeout}')
         # 发送信息
         if have_filter_mes:
             self.ret_msg = f'筛选结束'
