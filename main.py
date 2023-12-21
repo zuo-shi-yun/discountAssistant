@@ -2,13 +2,14 @@ import hashlib
 import os
 
 import requests
-from pkg.plugin.host import EventContext, PluginHost
-from pkg.plugin.models import *
 from plugins.discountAssistant import config
 from plugins.discountAssistant.utils.cmd import HandleCmd
 from plugins.discountAssistant.utils.message import HandleMessage
 from requests.adapters import HTTPAdapter
 from tqdm import tqdm
+
+from pkg.plugin.host import EventContext, PluginHost
+from pkg.plugin.models import *
 
 """
 自动筛选、发送淘宝、京东优惠券
@@ -16,7 +17,7 @@ from tqdm import tqdm
 
 
 # 注册插件
-@register(name="discountAssistant", description="自动筛选、发送淘宝、京东优惠券", version="1.1", author="zuoShiYun")
+@register(name="discountAssistant", description="自动筛选、发送淘宝、京东优惠券", version="1.2", author="zuoShiYun")
 class DiscountAssistant(Plugin):
     def __init__(self, plugin_host: PluginHost):
         self.host = plugin_host

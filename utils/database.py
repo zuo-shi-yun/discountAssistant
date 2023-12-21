@@ -137,6 +137,11 @@ class DatabaseManager:
             `image_url` text            
         )
         """)
+        # 添加encode列
+        try:
+            self.__execute__("alter table saleMes add column encode array")
+        except:  # 如果已经有该列则跳过
+            pass
 
         # group_mes_control表
         self.__execute__("""
@@ -175,13 +180,9 @@ class DatabaseManager:
     def __del__(self):
         self.close()
 
-    def get_today_all_message(self) -> List[str]:
+    def get_today_all_message(self) -> List[dict]:
         """得到当天的全部优惠卷信息"""
         month = datetime.now().month
         day = datetime.now().day
-        sql = "select mes from saleMes where `time` like '{:02}-{:02} %:%'".format(month, day)
-        c = self.__execute__(sql)
-        ret = []
-        for i in c:
-            ret.append(i[0])
-        return ret
+
+        return self.query(['mes', 'encode'], {'time': re.compile('{:02}-{:02} %:%'.format(month, day))})

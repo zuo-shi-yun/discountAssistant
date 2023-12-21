@@ -7,7 +7,7 @@ from mirai import Image
 from plugins.discountAssistant.utils.clear import clear_task
 from plugins.discountAssistant.utils.database import DatabaseManager
 from plugins.discountAssistant.utils.md.data_source import md_to_pic
-from plugins.discountAssistant.utils.message import Message
+from plugins.discountAssistant.utils.message import Message, HandleMessage
 
 from pkg.plugin.host import PluginHost
 from pkg.plugin.models import require_ver
@@ -176,11 +176,20 @@ class HandleCmd:
 
         image_url = []
         mes = []
+        send_mes = ['']
+        send_mes_emd = [HandleMessage.get_msg_encode('')]  # 默认一条空信息
 
         for i in all_mes:
             if re.search(self.param[0], i['mes'], re.IGNORECASE | re.S):  # 符合正则
-                mes.append(f"信息:{i['mes']}\n时间:{i['time']}\nID:{i['id']}")
-                image_url.append(i['image_url'] or '')
+                introduce, _ = HandleMessage.get_mes_info(i['mes'], self.cfg.suspicious_mes)
+                introduce_emd = HandleMessage.get_msg_encode(introduce)
+                is_repeat_mes, _, _ = HandleMessage.is_repeat_text(send_mes_emd, introduce_emd, send_mes, introduce,
+                                                                   self.cfg.similarity)
+                if not is_repeat_mes:  # 不是重复信息
+                    mes.append(f"信息:{i['mes']}\n时间:{i['time']}\nID:{i['id']}")
+                    image_url.append(i['image_url'] or '')
+                    send_mes.append(introduce)
+                    send_mes_emd.append(introduce_emd)
 
         # 发送信息
         if len(mes):

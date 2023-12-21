@@ -9,9 +9,10 @@ from datetime import datetime
 from typing import List, Tuple
 
 from mirai import Plain, Image
-from pkg.plugin.host import PluginHost
 from plugins.discountAssistant.utils.database import DatabaseManager
 from text2vec import SentenceModel, cos_sim
+
+from pkg.plugin.host import PluginHost
 
 sale_mes_lock = threading.Lock()  # 消息锁
 
@@ -46,7 +47,7 @@ class HandleMessage:
         svc_group_control = DatabaseManager('groupMesControl')
         is_continuous_mes = svc_group_control.query(['is_continuous_mes'], {'QQ': self.qq})[0]  # 是否是连续信息的后续信息
         # 优惠券相关信息
-        introduce, code = self.get_mes_info(self.mes_plain)  # 优惠券介绍,代码
+        introduce, code = self.get_mes_info(self.mes_plain, self.cfg.suspicious_mes)  # 优惠券介绍,代码
 
         # 当是非连续消息并且是连续消息的非后续消息时进入
         if not (is_continuous_mes and self.handle_continuous_late_message(self.mes_plain, svc_group_control, introduce,
@@ -67,10 +68,10 @@ class HandleMessage:
                         need_get_more_message = True
                         introduce = self.mes_plain
 
-                    today_all_mes = DatabaseManager().get_today_all_message() or ['']  # 当天的全部筛选到的优惠卷消息
+                    today_all_mes = DatabaseManager().get_today_all_message() or [
+                        {'mes': '', 'encode': None}]  # 当天的全部筛选到的优惠卷消息
                     # 判断是否是重复消息、多步骤消息的重复消息
-                    is_repeat = self.is_repeat_message(today_all_mes, introduce, r"plugins/discountAssistant/model",
-                                                       svc_message, code)
+                    is_repeat, mes_emd = self.is_repeat_message(today_all_mes, introduce, svc_message, code)
                     is_contain = self.is_contain_message(today_all_mes, introduce, svc_message, code)
 
                     if not is_repeat and not is_contain:  # 不是重复信息
@@ -84,7 +85,7 @@ class HandleMessage:
                                      'last_no': last_no + 1}, {'qq': self.qq})
                         # 普通消息处理流程
                         self.handle_normal_message(code, keywords, introduce, self.mes_plain, send_qq, svc_message,
-                                                   qq_type, need_get_more_message, svc_group_control)
+                                                   qq_type, need_get_more_message, svc_group_control, mes_emd)
             elif last_mes_no:  # 是可疑信息后续信息
                 mes_time = svc_group_control.query(['last_time'], {'qq': self.qq})[0]
                 # 获得原数据
@@ -119,7 +120,8 @@ class HandleMessage:
         return True
 
     # 获得优惠券的介绍和代码
-    def get_mes_info(self, mes):
+    @classmethod
+    def get_mes_info(cls, mes, suspicious_mes):
         """获得优惠券的介绍和代码"""
         introduce = ''  # 简化后的优惠卷信息
         code = ''  # 优惠券代码
@@ -133,7 +135,7 @@ class HandleMessage:
             mes_lines = mes.split('\n')
             temp_code = []  # 临时代码
             for i in mes_lines:
-                if self.get_char_cnt(i) >= self.cfg.suspicious_mes or 'http' in i:  # 符合有效信息标准或有链接则为优惠券代码
+                if cls.get_char_num_cnt(i) >= suspicious_mes or 'http' in i:  # 符合有效信息标准或有链接则为优惠券代码
                     temp_code.append(i)
 
             if len(temp_code) != 0:
@@ -254,27 +256,51 @@ class HandleMessage:
         else:
             return False
 
-    # 是否是重复信息
-    def is_repeat_message(self, today_all_mes: List[str], mes: str, model_path, svc_message, code,
-                          handle_repeat=True) -> bool:
-        """判断是否是重复优惠券"""
-        model = SentenceModel(model_path)  # 模型
-        # 向量化
-        embeddings1 = model.encode(today_all_mes)
-        embeddings2 = model.encode(mes)
+    # 得到文字向量化结果
+    @staticmethod
+    def get_msg_encode(msg):
+        """得到文字向量化结果"""
+        model = SentenceModel(r"plugins/discountAssistant/model")  # 模型
+        return model.encode(msg)
+
+    # 比较相似度
+    @staticmethod
+    def is_repeat_text(all_mes_embeddings, mes_embeddings, all_mes, mes, similarity):
+        """比较相似度"""
         # 信息相似度
-        cosine_scores = cos_sim(embeddings1, embeddings2)
+        cosine_scores = cos_sim(all_mes_embeddings, mes_embeddings)
         # 比较相似度
         for i in range(len(cosine_scores)):
             # 高于设定值判定为重复文本
-            if float(re.search(r'tensor\(\[(.*)]\)', str(cosine_scores[i])).group(1)) > self.cfg.similarity:
-                logging.info(f'文本相似度审查未通过,重复文本: {today_all_mes[i]},相似度:{cosine_scores[i]}')
-                if handle_repeat:
-                    self.handle_repeat_message(svc_message, today_all_mes[i], code)  # 处理重复信息流程
-                return True
+            if float(re.search(r'tensor\(\[(.*)]\)', str(cosine_scores[i])).group(1)) > similarity:
+                return True, all_mes[i], cosine_scores[i]
+        else:
+            return False, mes, 0
+
+    # 是否是重复信息
+    def is_repeat_message(self, today_all_mes: List[dict], mes: str, svc_message, code) -> tuple:
+        """判断是否是重复优惠券"""
+        # 向量化
+        embeddings1 = []
+        embeddings2 = self.get_msg_encode(mes)
+
+        for i in today_all_mes:
+            if i['encode']:  # 兼容旧版本
+                embeddings1.append(i['encode'])
+            else:
+                embeddings1.append(self.get_msg_encode(i['mes']))
+
+        # 是否是重复文本
+        is_repeat_mes, mes, similarity = self.is_repeat_text(embeddings1, embeddings2, today_all_mes, mes,
+                                                             self.cfg.similarity)
+
+        if is_repeat_mes:
+            logging.info(f'文本相似度审查未通过,重复文本: {mes},相似度:{similarity}')
+            self.handle_repeat_message(svc_message, mes, code)  # 处理重复信息流程
         else:
             logging.debug(f'文本相似度审查通过,文本: {mes}')
-            return False
+
+        return is_repeat_mes, embeddings2
 
     # 是否是多步骤信息的重复信息
     def is_contain_message(self, today_all_mes, introduce, svc_message, code) -> bool:
@@ -303,14 +329,14 @@ class HandleMessage:
 
     # 处理普通信息
     def handle_normal_message(self, code, keywords, introduce, mes, send_qq, svc_message, qq_type,
-                              need_get_more_message: bool, svc_context):
+                              need_get_more_message: bool, svc_context, mes_emd):
         """处理普通信息"""
         local_time = time.localtime(time.time())
         mes_time = time.strftime("%m-%d %H:%M", local_time)
         # 优惠券数据
         insert_data = {'receive_qq': self.qq, 'mes': introduce, 'keyword': ' '.join(keywords),
                        'time': mes_time, 'code': code, 'src_mes': mes, 'send_qq': ' '.join([str(i) for i in send_qq]),
-                       'image_url': self.image}
+                       'image_url': self.image, 'encode': mes_emd}
         svc_message.insert(insert_data)  # 更新数据库
         mes_id = svc_message.query(['id'], {'src_mes': mes})[0]  # 优惠券id
 
@@ -341,7 +367,7 @@ class HandleMessage:
     # 判断是否是可疑信息
     def get_more_message(self, mes: str, svc_context) -> Tuple[List, List[str]]:
         """判断是否是可疑信息"""
-        cnt = self.get_char_cnt(mes)
+        cnt = self.get_char_num_cnt(mes)
         if cnt < self.cfg.suspicious_mes and 'http' not in mes:  # 是可疑信息
             logging.info(f'{self.qq}的{mes}被判定为可疑信息')
             svc_all_message = DatabaseManager('allMes')
@@ -368,10 +394,11 @@ class HandleMessage:
 
     # 获得英文字符数量
     @staticmethod
-    def get_char_cnt(mes):
-        uppercase_count = sum(1 for char in mes if char.isupper())
-        lowercase_count = sum(1 for char in mes if char.islower())
-        cnt = uppercase_count + lowercase_count  # 英文字符数量
+    def get_char_num_cnt(mes):
+        uppercase_count = sum(1 for char in mes if char.isupper())  # 大写
+        lowercase_count = sum(1 for char in mes if char.islower())  # 小写
+        num_count = sum(1 for char in mes if char.isdigit())  # 数字
+        cnt = uppercase_count + lowercase_count + num_count  # 英文字符+数字数量
         return cnt
 
 
