@@ -296,8 +296,8 @@ class HandleMessage:
         # 是否是重复文本
         is_repeat_mes, filter_mes, similarity = self.is_repeat_text(embeddings1, embeddings2, today_all_mes, mes,
                                                                     self.cfg.similarity)
-        filter_mes = filter_mes['mes']
         if is_repeat_mes:
+            filter_mes = filter_mes['mes']
             logging.info(f'文本相似度审查未通过,重复文本: {filter_mes},相似度:{similarity}')
             self.handle_repeat_message(svc_message, filter_mes, code)  # 处理重复信息流程
         else:
