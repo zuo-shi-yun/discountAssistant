@@ -68,7 +68,7 @@ class HandleMessage:
                         need_get_more_message = True
                         introduce = self.mes_plain
 
-                    today_all_mes = DatabaseManager().get_today_all_message() or [
+                    today_all_mes = DatabaseManager('saleMes').get_today_all_message() or [
                         {'mes': '', 'encode': None}]  # 当天的全部筛选到的优惠卷消息
                     # 判断是否是重复消息、多步骤消息的重复消息
                     is_repeat, mes_emd = self.is_repeat_message(today_all_mes, introduce, svc_message, code)
