@@ -1,6 +1,6 @@
 from pkg.plugin.models import require_ver
 from pkg.qqbot.cmds.system.cconfig import config_operation
-from pkg.utils.context import context
+from pkg.utils import context
 
 
 # 判断是否是旧版本
