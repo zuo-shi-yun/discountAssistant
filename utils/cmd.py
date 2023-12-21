@@ -176,7 +176,8 @@ class HandleCmd:
         have_filter_mes = False
         send_mes = ['']
         send_mes_emd = [HandleMessage.get_msg_encode('')]  # 默认一条空信息
-
+        src_process_message_timeout = HostConfig.get('process_message_timeout')
+        HostConfig.put('process_message_timeout', 60 * 60)  # 更改超时时间
         for i in all_mes:
             if re.search(self.param[0], i['mes'], re.IGNORECASE | re.S):  # 符合正则
                 introduce, _ = HandleMessage.get_mes_info(i['mes'], self.cfg.suspicious_mes)
@@ -193,9 +194,11 @@ class HandleCmd:
                     send_mes.append(introduce)
                     send_mes_emd.append(introduce_emd)
                     have_filter_mes = True
-
+        HostConfig.put('process_message_timeout', src_process_message_timeout)
         # 发送信息
-        if not have_filter_mes:
+        if have_filter_mes:
+            self.ret_msg = f'筛选结束'
+        else:
             self.ret_msg = f'没有找到对应{self.param[0]}的信息'
 
     # 查询关键字
@@ -319,7 +322,7 @@ class HandleCmd:
     def clear_database(self):
         """清理数据库"""
         admin_qq = HostConfig.get('admin_qq')  # 管理员QQ
-        
+
         if not isinstance(admin_qq, list):
             admin_qq = [admin_qq]
 
