@@ -1,7 +1,7 @@
 """
 处理优惠券信息的流程代码。实现筛选优惠券逻辑
 """
-import io
+import json
 import logging
 import re
 import threading
@@ -287,11 +287,9 @@ class HandleMessage:
         embeddings2 = self.get_msg_encode(mes)
 
         for i in today_all_mes:
-            if i['encode']:  # 兼容旧版本
-                out = io.BytesIO(i['encode'])
-                out.seek(0)
-                embeddings1.append(np.load(out))
-            else:
+            if i['encode']:
+                embeddings1.append(np.array(json.loads(i['encode'])))
+            else:  # 兼容旧版本
                 embeddings1.append(self.get_msg_encode(i['mes']))
 
         # 是否是重复文本
@@ -340,7 +338,7 @@ class HandleMessage:
         # 优惠券数据
         insert_data = {'receive_qq': self.qq, 'mes': introduce, 'keyword': ' '.join(keywords),
                        'time': mes_time, 'code': code, 'src_mes': mes, 'send_qq': ' '.join([str(i) for i in send_qq]),
-                       'image_url': self.image, 'encode': mes_emd}
+                       'image_url': self.image, 'encode': json.dumps(mes_emd.tolist())}
         svc_message.insert(insert_data)  # 更新数据库
         mes_id = svc_message.query(['id'], {'src_mes': mes})[0]  # 优惠券id
 
