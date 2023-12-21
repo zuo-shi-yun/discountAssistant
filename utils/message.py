@@ -275,7 +275,7 @@ class HandleMessage:
         for i in range(len(cosine_scores)):
             # 高于设定值判定为重复文本
             if float(re.search(r'tensor\(\[(.*)]\)', str(cosine_scores[i])).group(1)) > similarity:
-                return True, all_mes[i]['mes'], cosine_scores[i]
+                return True, all_mes[i], cosine_scores[i]
         else:
             return False, mes, 0
 
@@ -294,14 +294,14 @@ class HandleMessage:
         embeddings1 = np.array(embeddings1)
 
         # 是否是重复文本
-        is_repeat_mes, mes, similarity = self.is_repeat_text(embeddings1, embeddings2, today_all_mes, mes,
-                                                             self.cfg.similarity)
-
+        is_repeat_mes, filter_mes, similarity = self.is_repeat_text(embeddings1, embeddings2, today_all_mes, mes,
+                                                                    self.cfg.similarity)
+        filter_mes = filter_mes['mes']
         if is_repeat_mes:
-            logging.info(f'文本相似度审查未通过,重复文本: {mes},相似度:{similarity}')
-            self.handle_repeat_message(svc_message, mes, code)  # 处理重复信息流程
+            logging.info(f'文本相似度审查未通过,重复文本: {filter_mes},相似度:{similarity}')
+            self.handle_repeat_message(svc_message, filter_mes, code)  # 处理重复信息流程
         else:
-            logging.debug(f'文本相似度审查通过,文本: {mes}')
+            logging.debug(f'文本相似度审查通过,文本: {filter_mes}')
 
         return is_repeat_mes, embeddings2
 
