@@ -186,8 +186,9 @@ class HandleCmd:
                 is_repeat_mes, _, _ = HandleMessage.is_repeat_text(send_mes_emd, introduce_emd, send_mes, introduce,
                                                                    self.cfg.similarity)
                 if not is_repeat_mes and i['id'] not in send_id:  # 不是重复信息
+                    send_id.append(i['id'])
                     # 发送信息
-                    mes = f"信息:{i['mes']}\n时间:{i['time']}\nID:{i['id']}"
+                    mes = f"信息:{i['mes']}\n时间:{i['time']}\nID:{i['id']}{send_id}"
                     image_url = i['image_url'] or ''
                     mes_chain = Message(self.cfg).get_mes_chain(mes, image_url)  # 信息链
                     Message(self.cfg).send_message([self.qq], [self.launcher_type], mes_chain)  # 发送信息
@@ -195,7 +196,6 @@ class HandleCmd:
                     send_mes.append(introduce)
                     send_mes_emd.append(introduce_emd)
                     have_filter_mes = True
-                    send_id.append(i['id'])
 
         HostConfig.put('process_message_timeout', f'{src_process_message_timeout}')  # 复原设置
 
