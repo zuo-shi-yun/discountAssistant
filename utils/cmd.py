@@ -199,11 +199,12 @@ class HandleCmd:
 
         HostConfig.put('process_message_timeout', f'{src_process_message_timeout}')  # 复原设置
 
-        # 发送信息
-        if have_filter_mes:
-            self.ret_msg = f'筛选结束'
-        else:
-            self.ret_msg = f'没有找到对应{self.param[0]}的信息'
+        # # 发送信息
+        # if have_filter_mes:
+        #     self.ret_msg = f'筛选结束'
+        # else:
+        #     self.ret_msg = f'没有找到对应{self.param[0]}的信息'
+        self.ret_msg = send_id
 
     # 查询关键字
     @exception_decorator
