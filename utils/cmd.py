@@ -176,6 +176,7 @@ class HandleCmd:
         have_filter_mes = False
         send_mes = ['']
         send_mes_emd = [HandleMessage.get_msg_encode('')]  # 默认一条空信息
+        send_id = []  # 已经发送了的id，尝试解决稀奇古怪的bug
         src_process_message_timeout = HostConfig.get('process_message_timeout')
         HostConfig.put('process_message_timeout', f'{60 * 60}')  # 更改超时时间
         for i in all_mes:
@@ -184,7 +185,7 @@ class HandleCmd:
                 introduce_emd = HandleMessage.get_msg_encode(introduce)
                 is_repeat_mes, _, _ = HandleMessage.is_repeat_text(send_mes_emd, introduce_emd, send_mes, introduce,
                                                                    self.cfg.similarity)
-                if not is_repeat_mes:  # 不是重复信息
+                if not is_repeat_mes and i['id'] not in send_id:  # 不是重复信息
                     # 发送信息
                     mes = f"信息:{i['mes']}\n时间:{i['time']}\nID:{i['id']}"
                     image_url = i['image_url'] or ''
@@ -194,6 +195,7 @@ class HandleCmd:
                     send_mes.append(introduce)
                     send_mes_emd.append(introduce_emd)
                     have_filter_mes = True
+                    send_id.append(i['id'])
 
         HostConfig.put('process_message_timeout', f'{src_process_message_timeout}')  # 复原设置
 

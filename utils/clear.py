@@ -104,7 +104,7 @@ def delete_message(database, save_day) -> int:
         date = datetime.strptime(date_string, date_format).replace(hour=0, minute=0, second=0, microsecond=0,
                                                                    year=datetime.now().year)
         # 计算两个日期之间的差距
-        difference = today - date
+        difference = abs(today - date)
         # 判断差距是否大于等于指定范围
         if difference > timedelta(days=save_day - 1):
             svc.delete({'id': row['id']})
