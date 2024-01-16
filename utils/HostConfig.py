@@ -1,7 +1,6 @@
 from pkg.plugin.models import require_ver
 from pkg.qqbot.cmds.system.cconfig import config_operation
 from pkg.utils import context
-from pkg.utils.context import set_config_manager
 
 
 # 判断是否是旧版本
@@ -25,10 +24,11 @@ class HostConfig:
             return context.get_config_manager().data[key]
 
     @classmethod
-    def put(cls, key: str, value):
-        if cls.is_old_version:
-            config_operation('', [key, value])
-        else:
-            temp_config = context.get_config_manager()
-            temp_config.data[key] = value
-            set_config_manager(temp_config)
+    def put(cls, key: str, value: str):
+        config_operation('', [key, value])
+        # if cls.is_old_version:
+        #     config_operation('', [key, value])
+        # else:
+        #     temp_config = context.get_config_manager()
+        #     temp_config.data[key] = value
+        #     set_config_manager(temp_config)
