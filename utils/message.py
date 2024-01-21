@@ -127,7 +127,7 @@ class HandleMessage:
         """获得优惠券的介绍和代码"""
         introduce = ''  # 简化后的优惠卷信息
         code = ''  # 优惠券代码
-        if '.jd.' in mes:  # 京东卷
+        if 'jd' in mes:  # 京东卷
             introduce = [i.strip() for i in re.split(r'https://u.jd.c.+', mes)]
             if '查券' in introduce[-1]:  # 去掉无用信息——部分qq群特殊对待
                 introduce[-1] = re.search(r'(.*)-----------\n----------.+', introduce[-1], re.S).group(1).strip()
