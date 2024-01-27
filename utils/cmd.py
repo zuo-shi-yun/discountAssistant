@@ -3,6 +3,7 @@ import base64
 import re
 import time
 
+from gevent import thread
 from mirai import Image, Plain
 from plugins.discountAssistant.utils.HostConfig import HostConfig
 from plugins.discountAssistant.utils.clear import clear_task
@@ -98,6 +99,7 @@ class HandleCmd:
 
     @classmethod
     def get_keyword_re(cls, param, src_keywords):
+        ret_msg = ''
         # 构建关键字re
         if len(param) > 2:  # 多关键字情况
             if param[1] == '不包含':  # 不包含某关键字
@@ -147,12 +149,15 @@ class HandleCmd:
         else:
             src_keywords = []
 
-        # 更新数据库
-        if self.qq in qq_list:  # 如果该qq号已经添加过关键字
-            new_keyword = svc.query(['keywords'], {'qq': self.qq})[0] + ' ' + keyword
-            svc.update({'keywords': new_keyword}, {'qq': self.qq})  # 更新数据库
-        else:
-            svc.insert({'qq': self.qq, 'keywords': keyword, 'send_mes': 1, 'qq_type': self.launcher_type})
+        flag_insert_keyword, keyword, ret_msg = self.get_keyword_re(self.param, src_keywords)
+
+        if flag_insert_keyword:  # 需要插入新关键字
+            # 更新数据库
+            if self.qq in qq_list:  # 如果该qq号已经添加过关键字
+                new_keyword = svc.query(['keywords'], {'qq': self.qq})[0] + ' ' + keyword
+                svc.update({'keywords': new_keyword}, {'qq': self.qq})  # 更新数据库
+            else:
+                svc.insert({'qq': self.qq, 'keywords': keyword, 'send_mes': 1, 'qq_type': self.launcher_type})
         # 若已有回复信息则使用原有信息
         self.ret_msg = self.ret_msg or f'成功,若筛选到含有关键字的消息将自动发送给你,若不希望自动发送,请发送“关闭发送”\n检索关键字为:{keyword}'
 
@@ -188,7 +193,8 @@ class HandleCmd:
             src_process_message_timeout = HostConfig.get('process_message_timeout')
             # HostConfig.put('process_message_timeout', f'{60 * 60}')  # 更改超时时间
             for i in all_mes:
-                if re.search(self.param[0], i['mes'], re.IGNORECASE | re.S):  # 符合正则
+                _, keyword, _ = self.get_keyword_re(self.param, '')
+                if re.search(keyword, i['mes'], re.IGNORECASE | re.S):  # 符合正则
                     introduce, _ = HandleMessage.get_mes_info(i['mes'], self.cfg.suspicious_mes)
                     introduce_emd = HandleMessage.get_msg_encode(introduce)
                     is_repeat_mes, _, _ = HandleMessage.is_repeat_text(send_mes_emd, introduce_emd, send_mes, introduce,
@@ -213,6 +219,8 @@ class HandleCmd:
             else:
                 Message(self.cfg).send_message(self.qq, [self.launcher_type],
                                                [Plain(f'没有找到对应{self.param[0]}的信息')])
+
+        thread.start_new_thread(main)
 
     # 查询关键字
     @exception_decorator
