@@ -182,6 +182,7 @@ class HandleCmd:
     def query_all_message(self):
         """在全部信息中查询含有关键字的信息"""
 
+        # 主函数
         def main():
             svc = DatabaseManager('allMes')  # 全部信息数据库
             all_mes = svc.query(['mes', 'time', 'image_url', 'id'])  # 获得全部信息
@@ -220,6 +221,7 @@ class HandleCmd:
                 Message(self.cfg).send_message(self.qq, [self.launcher_type],
                                                [Plain(f'没有找到对应{self.param[0]}的信息')])
 
+        # 启用新线程规避超时检测
         thread = Thread(target=main)
         thread.start()
 
