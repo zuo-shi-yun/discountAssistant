@@ -3,7 +3,7 @@ import base64
 import re
 import time
 
-from mirai import Image
+from mirai import Image, Plain
 from plugins.discountAssistant.utils.HostConfig import HostConfig
 from plugins.discountAssistant.utils.clear import clear_task
 from plugins.discountAssistant.utils.database import DatabaseManager
@@ -96,6 +96,46 @@ class HandleCmd:
         else:
             self.ret_msg = '我已经监听了这个群,无需重复添加'
 
+    @classmethod
+    def get_keyword_re(cls, param, src_keywords):
+        # 构建关键字re
+        if len(param) > 2:  # 多关键字情况
+            if param[1] == '不包含':  # 不包含某关键字
+                ban_keyword = ''  # 不包含关键字re表达式
+                for i in range(2, len(param)):  # 构建re
+                    ban_keyword += f'(?!.*{param[i]})'
+                keyword = f'^{ban_keyword}.*{param[0]}.*$'  # 最终关键字re
+                if keyword in src_keywords:  # 已经监听了关键字
+                    ret_msg = '我已经监听了这个关键字,无需重复添加'
+                    return False, '', ret_msg
+            elif param[1] == '同时包含':  # 同时包含某关键字:
+                include_keyword = f'(?=.*{param[0]})'
+                for i in range(2, len(param)):
+                    include_keyword += f'(?=.*{param[i]})'
+                keyword = include_keyword  # 最终关键re
+                if keyword in src_keywords:  # 已经监听关键字
+                    ret_msg = '我已经监听了这个关键字,无需重复添加'
+                    return False, '', ret_msg
+            else:  # 一次性添加多个关键字
+                keyword = []  # 关键字
+                ret_mes = ''
+                for i in param:  # 遍历关键字
+                    if i in src_keywords:
+                        ret_mes += f'我已经监听了关键字{i},无需重复添加\n'
+                    else:
+                        ret_mes += f'成功添加关键字:{i}\n'
+                        keyword.append(i)
+                ret_mes += '若筛选到含有关键字的消息将自动发送给你,若不希望自动发送,请发送“关闭发送”'
+                ret_msg = ret_mes
+                keyword = ' '.join(keyword)  # 最终关键字
+        else:  # 只添加一个关键字
+            if param[0] in src_keywords:
+                ret_msg = '我已经监听了这个关键字,无需重复添加'
+                return False, '', ret_msg
+            keyword = f'{param[0]}'  # 最终关键字
+
+        return True, keyword, ret_msg
+
     # 添加关键字
     @exception_decorator
     def insert_keyword(self):
@@ -106,41 +146,7 @@ class HandleCmd:
             src_keywords = svc.query(['keywords'], {'QQ': self.qq})[0].split()  # 已有关键字
         else:
             src_keywords = []
-        # 构建关键字re
-        if len(self.param) > 2:  # 多关键字情况
-            if self.param[1] == '不包含':  # 不包含某关键字
-                ban_keyword = ''  # 不包含关键字re表达式
-                for i in range(2, len(self.param)):  # 构建re
-                    ban_keyword += f'(?!.*{self.param[i]})'
-                keyword = f'^{ban_keyword}.*{self.param[0]}.*$'  # 最终关键字re
-                if keyword in src_keywords:  # 已经监听了关键字
-                    self.ret_msg = '我已经监听了这个关键字,无需重复添加'
-                    return
-            elif self.param[1] == '同时包含':  # 同时包含某关键字:
-                include_keyword = f'(?=.*{self.param[0]})'
-                for i in range(2, len(self.param)):
-                    include_keyword += f'(?=.*{self.param[i]})'
-                keyword = include_keyword  # 最终关键re
-                if keyword in src_keywords:  # 已经监听关键字
-                    self.ret_msg = '我已经监听了这个关键字,无需重复添加'
-                    return
-            else:  # 一次性添加多个关键字
-                keyword = []  # 关键字
-                ret_mes = ''
-                for i in self.param:  # 遍历关键字
-                    if i in src_keywords:
-                        ret_mes += f'我已经监听了关键字{i},无需重复添加\n'
-                    else:
-                        ret_mes += f'成功添加关键字:{i}\n'
-                        keyword.append(i)
-                ret_mes += '若筛选到含有关键字的消息将自动发送给你,若不希望自动发送,请发送“关闭发送”'
-                self.ret_msg = ret_mes
-                keyword = ' '.join(keyword)  # 最终关键字
-        else:  # 只添加一个关键字
-            if self.param[0] in src_keywords:
-                self.ret_msg = '我已经监听了这个关键字,无需重复添加'
-                return
-            keyword = f'{self.param[0]}'  # 最终关键字
+
         # 更新数据库
         if self.qq in qq_list:  # 如果该qq号已经添加过关键字
             new_keyword = svc.query(['keywords'], {'qq': self.qq})[0] + ' ' + keyword
@@ -170,40 +176,43 @@ class HandleCmd:
     @exception_decorator
     def query_all_message(self):
         """在全部信息中查询含有关键字的信息"""
-        svc = DatabaseManager('allMes')  # 全部信息数据库
-        all_mes = svc.query(['mes', 'time', 'image_url', 'id'])  # 获得全部信息
 
-        have_filter_mes = False
-        send_mes = ['']
-        send_mes_emd = [HandleMessage.get_msg_encode('')]  # 默认一条空信息
-        send_id = []  # 已经发送了的id，尝试解决稀奇古怪的bug
-        src_process_message_timeout = HostConfig.get('process_message_timeout')
-        # HostConfig.put('process_message_timeout', f'{60 * 60}')  # 更改超时时间
-        for i in all_mes:
-            if re.search(self.param[0], i['mes'], re.IGNORECASE | re.S):  # 符合正则
-                introduce, _ = HandleMessage.get_mes_info(i['mes'], self.cfg.suspicious_mes)
-                introduce_emd = HandleMessage.get_msg_encode(introduce)
-                is_repeat_mes, _, _ = HandleMessage.is_repeat_text(send_mes_emd, introduce_emd, send_mes, introduce,
-                                                                   self.cfg.similarity)
-                if not is_repeat_mes and i['id'] not in send_id:  # 不是重复信息
-                    # 发送信息
-                    mes = f"信息:{i['mes']}\n时间:{i['time']}\nID:{i['id']}"
-                    image_url = i['image_url'] or ''
-                    mes_chain = Message(self.cfg).get_mes_chain(mes, image_url)  # 信息链
-                    Message(self.cfg).send_message([self.qq], [self.launcher_type], mes_chain)  # 发送信息
-                    # 更改已发送信息列表
-                    send_mes.append(introduce)
-                    send_mes_emd.append(introduce_emd)
-                    have_filter_mes = True
-                    send_id.append(i['id'])
+        def main():
+            svc = DatabaseManager('allMes')  # 全部信息数据库
+            all_mes = svc.query(['mes', 'time', 'image_url', 'id'])  # 获得全部信息
 
-        # HostConfig.put('process_message_timeout', f'{src_process_message_timeout}')  # 复原设置
+            have_filter_mes = False
+            send_mes = ['']
+            send_mes_emd = [HandleMessage.get_msg_encode('')]  # 默认一条空信息
+            send_id = []  # 已经发送了的id，尝试解决稀奇古怪的bug
+            src_process_message_timeout = HostConfig.get('process_message_timeout')
+            # HostConfig.put('process_message_timeout', f'{60 * 60}')  # 更改超时时间
+            for i in all_mes:
+                if re.search(self.param[0], i['mes'], re.IGNORECASE | re.S):  # 符合正则
+                    introduce, _ = HandleMessage.get_mes_info(i['mes'], self.cfg.suspicious_mes)
+                    introduce_emd = HandleMessage.get_msg_encode(introduce)
+                    is_repeat_mes, _, _ = HandleMessage.is_repeat_text(send_mes_emd, introduce_emd, send_mes, introduce,
+                                                                       self.cfg.similarity)
+                    if not is_repeat_mes and i['id'] not in send_id:  # 不是重复信息
+                        # 发送信息
+                        mes = f"信息:{i['mes']}\n时间:{i['time']}\nID:{i['id']}"
+                        image_url = i['image_url'] or ''
+                        mes_chain = Message(self.cfg).get_mes_chain(mes, image_url)  # 信息链
+                        Message(self.cfg).send_message([self.qq], [self.launcher_type], mes_chain)  # 发送信息
+                        # 更改已发送信息列表
+                        send_mes.append(introduce)
+                        send_mes_emd.append(introduce_emd)
+                        have_filter_mes = True
+                        send_id.append(i['id'])
 
-        # 发送信息
-        if have_filter_mes:
-            self.ret_msg = f'筛选结束'
-        else:
-            self.ret_msg = f'没有找到对应{self.param[0]}的信息'
+            # HostConfig.put('process_message_timeout', f'{src_process_message_timeout}')  # 复原设置
+
+            # 发送信息
+            if have_filter_mes:
+                Message(self.cfg).send_message(self.qq, [self.launcher_type], [Plain(f'筛选结束')])
+            else:
+                Message(self.cfg).send_message(self.qq, [self.launcher_type],
+                                               [Plain(f'没有找到对应{self.param[0]}的信息')])
 
     # 查询关键字
     @exception_decorator
