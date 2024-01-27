@@ -2,8 +2,8 @@
 import base64
 import re
 import time
+from threading import Thread
 
-from gevent import thread
 from mirai import Image, Plain
 from plugins.discountAssistant.utils.HostConfig import HostConfig
 from plugins.discountAssistant.utils.clear import clear_task
@@ -220,7 +220,8 @@ class HandleCmd:
                 Message(self.cfg).send_message(self.qq, [self.launcher_type],
                                                [Plain(f'没有找到对应{self.param[0]}的信息')])
 
-        thread.start_new_thread(main)
+        thread = Thread(target=main)
+        thread.start()
 
     # 查询关键字
     @exception_decorator
