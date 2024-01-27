@@ -149,7 +149,7 @@ class HandleCmd:
         else:
             src_keywords = []
 
-        flag_insert_keyword, keyword, ret_msg = self.get_keyword_re(self.param, src_keywords)
+        flag_insert_keyword, keyword, self.ret_msg = self.get_keyword_re(self.param, src_keywords)
 
         if flag_insert_keyword:  # 需要插入新关键字
             # 更新数据库
