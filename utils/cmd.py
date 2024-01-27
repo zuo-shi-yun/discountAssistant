@@ -101,7 +101,7 @@ class HandleCmd:
     def get_keyword_re(cls, param, src_keywords):
         ret_msg = ''
         # 构建关键字re
-        if len(param) > 2:  # 多关键字情况
+        if len(param) >= 2:  # 多关键字情况
             if param[1] == '不包含':  # 不包含某关键字
                 ban_keyword = ''  # 不包含关键字re表达式
                 for i in range(2, len(param)):  # 构建re
