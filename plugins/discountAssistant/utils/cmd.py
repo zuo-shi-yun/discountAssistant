@@ -27,7 +27,6 @@ class HandleCmd:
         self.launcher_type = 0 if kwargs.get('launcher_type') == 'person' else 1  # 消息类型:0个人1群
         self.ret_msg = ''
         self.e = None  # 异常
-
         self.cmd = cmd  # 用户命令
         self.param = param  # 命令参数
 
@@ -52,7 +51,8 @@ class HandleCmd:
             '删除群': self.delete_group,
             '删除关键字': self.delete_keyword,
             '删除关键字序号': self.delete_keyword_by_no,
-            '清理数据库': self.clear_database
+            '清理数据库': self.clear_database,
+            '查询全部信息相关信息': self.query_all_message_context_mes
         }
 
         if self.cmd in handle_func:  # 是本插件处理指令
@@ -359,3 +359,27 @@ class HandleCmd:
         else:  # 使用默认时间范围
             clear_task(self.cfg.discount_message_save_day, self.cfg.all_message_save_day, self.cfg.clear_time,
                        True, self.qq, False)
+
+    # 查询所有信息相关信息
+    @exception_decorator
+    def query_all_message_context_mes(self):
+        """查询所有信息相关信息"""
+        svc = DatabaseManager('allMes')  # 优惠卷数据库
+        qq = svc.query(['receive_qq'], {'id': self.param[0]})[0]  # 查询指定信息的qq群
+        context_mes = svc.query(['mes'], {'receive_qq': qq})[0]  # 原信息
+        image_url = svc.query(['image_url'], {'receive_qq': qq})[0]
+
+        # 获得上下文信息
+        forward, later = Message.get_context_message(qq, context_mes, int(self.param[1]))
+        later[0].reverse()
+        later[1].reverse()
+        # 发送原信息
+        mes_chain = Message.get_mes_chain(context_mes, image_url)
+        # 发送可疑信息相关信息
+        Message(self.cfg).send_context_message(forward[0], [self.qq], [self.launcher_type], self.param[0], forward[1],
+                                               reverse=True)
+        time.sleep(1.5)  # 保证顺序
+        Message(self.cfg).send_message([self.qq], [self.launcher_type], mes_chain)  # 发送原信息
+        # 发送可疑信息相关信息信息
+        time.sleep(1.5)  # 保证顺序
+        Message(self.cfg).send_context_message(later[0], [self.qq], [self.launcher_type], self.param[0], later[1])
