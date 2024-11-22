@@ -9,6 +9,5 @@ pymdown-extensions
 typing
 python-markdown-math
 tqdm~=4.66.1
-pip~=23.2.1
 pillow~=10.1.0
 numpy~=1.26.2
