@@ -52,7 +52,7 @@ class HandleCmd:
             '删除关键字': self.delete_keyword,
             '删除关键字序号': self.delete_keyword_by_no,
             '清理数据库': self.clear_database,
-            '查询全部信息相关信息': self.query_all_message_context_mes
+            '查询所有信息相关信息': self.query_all_message_context_mes
         }
 
         if self.cmd in handle_func:  # 是本插件处理指令
