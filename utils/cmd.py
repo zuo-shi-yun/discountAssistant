@@ -52,7 +52,7 @@ class HandleCmd:
             '删除关键字': self.delete_keyword,
             '删除关键字序号': self.delete_keyword_by_no,
             '清理数据库': self.clear_database,
-            '查询全部信息相关信息': self.query_all_message_context_mes
+            '查询所有信息相关信息': self.query_all_message_context_mes
         }
 
         if self.cmd in handle_func:  # 是本插件处理指令
@@ -191,7 +191,7 @@ class HandleCmd:
             send_mes = ['']
             send_mes_emd = [HandleMessage.get_msg_encode('')]  # 默认一条空信息
             send_id = []  # 已经发送了的id，尝试解决稀奇古怪的bug
-            src_process_message_timeout = HostConfig.get('process_message_timeout')
+            # src_process_message_timeout = HostConfig.get('process_message_timeout')
             _, keyword, _ = self.get_keyword_re(self.param, '')
             # HostConfig.put('process_message_timeout', f'{60 * 60}')  # 更改超时时间
             for i in all_mes:
@@ -366,8 +366,8 @@ class HandleCmd:
         """查询所有信息相关信息"""
         svc = DatabaseManager('allMes')  # 优惠卷数据库
         qq = svc.query(['receive_qq'], {'id': self.param[0]})[0]  # 查询指定信息的qq群
-        context_mes = svc.query(['mes'], {'receive_qq': qq})[0]  # 原信息
-        image_url = svc.query(['image_url'], {'receive_qq': qq})[0]
+        context_mes = svc.query(['mes'], {'id': self.param[0]})[0]  # 原信息
+        image_url = svc.query(['image_url'], {'id': self.param[0]})[0]
 
         # 获得上下文信息
         forward, later = Message.get_context_message(qq, context_mes, int(self.param[1]))
