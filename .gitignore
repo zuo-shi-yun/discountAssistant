@@ -128,3 +128,10 @@ dmypy.json
 # Pyre type checker
 .pyre/
 /fun.py
+/.idea/discountAssistant.iml
+/.idea/material_theme_project_new.xml
+/.idea/misc.xml
+/.idea/inspectionProfiles/profiles_settings.xml
+/.idea/inspectionProfiles/Project_Default.xml
+/.idea/vcs.xml
+/.idea/workspace.xml
